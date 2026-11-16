@@ -1,0 +1,16 @@
+{
+  "name": "codemate-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "面向 Java 初学者的 AI 编程学习平台 MVP",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

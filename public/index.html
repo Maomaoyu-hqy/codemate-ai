@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CodeMate AI — 面向 Java 初学者的 AI 编程学习平台">
+  <title>CodeMate AI · Java 学习搭子</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#home" aria-label="CodeMate AI 首页">
+        <span class="brand-mark">C</span><span>CodeMate <b>AI</b></span>
+      </a>
+      <nav id="nav" aria-label="主导航">
+        <button class="nav-item active" data-view="home"><span>⌂</span>学习概览</button>
+        <button class="nav-item" data-view="tutor"><span>✦</span>AI 编程导师</button>
+        <button class="nav-item" data-view="diagnose"><span>⌁</span>代码诊断</button>
+        <button class="nav-item" data-view="practice"><span>✓</span>题库练习</button>
+        <button class="nav-item" data-view="mistakes"><span>↺</span>我的错题</button>
+        <button class="nav-item" data-view="knowledge"><span>⌕</span>课程知识库</button>
+      </nav>
+      <div class="side-card">
+        <span class="eyebrow">今日目标</span>
+        <strong id="goalText">完成 2 道练习</strong>
+        <div class="progress"><i id="goalProgress"></i></div>
+        <small id="goalMeta">0 / 2 已完成</small>
+      </div>
+      <div class="side-footer"><span class="avatar">J</span><div><b>Java 新手</b><small>持续学习中</small></div></div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <button class="menu-button" id="menuButton" aria-label="打开菜单">☰</button>
+        <div class="mode-pill"><i></i><span id="modeText">正在连接…</span></div>
+        <div class="streak">🔥 连续学习 <b id="streak">1</b> 天</div>
+      </header>
+
+      <section class="view active" id="view-home">
+        <div class="hero">
+          <div>
+            <span class="eyebrow">晚上好，未来的 Java 工程师 👋</span>
+            <h1>今天，也让代码<br><em>更清晰一点。</em></h1>
+            <p>从一个小问题开始。CodeMate 会陪你理解概念、定位问题，并根据薄弱点安排下一步。</p>
+            <div class="hero-actions"><button class="primary" data-go="practice">开始今日练习 →</button><button class="ghost" data-go="tutor">问问 AI 导师</button></div>
+          </div>
+          <div class="code-art" aria-hidden="true">
+            <div class="window-dots"><i></i><i></i><i></i></div>
+            <pre><span>public class</span> Learner {
+  <span>public static void</span> main(...) {
+    String goal = <b>"keep growing"</b>;
+    <mark>while</mark> (curious) {
+      learn();
+      practice();
+    }
+  }
+}</pre>
+            <div class="spark">✦</div>
+          </div>
+        </div>
+
+        <div class="section-title"><div><span class="eyebrow">YOUR PROGRESS</span><h2>学习画像</h2></div><span class="subtle">数据仅保存在本浏览器</span></div>
+        <div class="stats-grid">
+          <article class="stat"><span class="stat-icon purple">✓</span><div><b id="completedCount">0</b><small>已完成题目</small></div></article>
+          <article class="stat"><span class="stat-icon orange">◎</span><div><b id="accuracy">—</b><small>练习正确率</small></div></article>
+          <article class="stat"><span class="stat-icon green">↗</span><div><b id="mastered">0</b><small>已掌握知识点</small></div></article>
+          <article class="stat"><span class="stat-icon blue">⌁</span><div><b id="diagnosisCount">0</b><small>代码诊断次数</small></div></article>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-head"><div><span class="eyebrow">NEXT STEP</span><h3>为你推荐</h3></div><button class="text-button" data-go="practice">去练习 →</button></div>
+            <div id="recommendation" class="recommendation"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><span class="eyebrow">KNOWLEDGE MAP</span><h3>知识掌握度</h3></div></div>
+            <div id="knowledgeBars" class="knowledge-bars"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-tutor">
+        <div class="page-heading"><span class="eyebrow">SOCRATIC TUTOR</span><h1>AI 编程导师</h1><p>不是替你写答案，而是陪你把思路想明白。</p></div>
+        <div class="chat-layout">
+          <article class="chat-card">
+            <div id="chatMessages" class="messages">
+              <div class="message assistant"><span>✦</span><div><b>CodeMate</b><p>你好！我可以帮你理解 Java 概念、阅读报错或梳理解题思路。今天想学什么？</p></div></div>
+            </div>
+            <form id="chatForm" class="chat-input"><textarea id="chatInput" rows="2" maxlength="5000" placeholder="例如：for 循环里的 i++ 是什么意思？" required></textarea><button class="primary" type="submit">发送</button></form>
+          </article>
+          <aside class="tips-card"><h3>试着这样问</h3><button class="prompt-chip">数组下标为什么从 0 开始？</button><button class="prompt-chip">equals 和 == 有什么区别？</button><button class="prompt-chip">帮我理解这个空指针报错</button><hr><small>回答会结合本地课程知识片段。AI 可能出错，请以编译器和官方文档为准。</small></aside>
+        </div>
+      </section>
+
+      <section class="view" id="view-diagnose">
+        <div class="page-heading"><span class="eyebrow">SAFE STATIC ANALYSIS</span><h1>代码诊断</h1><p>粘贴 Java 代码，快速发现初学者常见问题。代码不会被执行。</p></div>
+        <div class="diagnose-grid">
+          <article class="editor-card"><div class="editor-head"><span>Main.java</span><span class="safe-badge">● 仅静态检查</span></div><textarea id="codeInput" spellcheck="false">public class Main {
+    public static void main(String[] args) {
+        String role = "student";
+        if (role == "student") {
+            System.out.println("Keep learning")
+        }
+    }
+}</textarea><button class="primary wide" id="diagnoseButton">开始诊断</button></article>
+          <article class="result-card"><div class="score-ring" id="scoreRing"><strong id="codeScore">—</strong><small>代码健康度</small></div><div id="diagnosisResults" class="diagnosis-results"><div class="empty-state">提交代码后，诊断建议会显示在这里。</div></div><p class="disclaimer">MVP 不编译、不运行用户代码。检查结果来自有限的静态规则，可能存在误报或漏报。</p></article>
+        </div>
+      </section>
+
+      <section class="view" id="view-practice">
+        <div class="page-heading"><span class="eyebrow">PRACTICE LAB</span><h1>题库练习</h1><p>即时反馈、错题自动记录，逐个补齐知识缺口。</p></div>
+        <div id="exerciseList" class="exercise-list"><div class="loading">正在加载题目…</div></div>
+      </section>
+
+      <section class="view" id="view-mistakes">
+        <div class="page-heading"><span class="eyebrow">REVIEW & GROW</span><h1>我的错题</h1><p>错误不是终点，而是最准确的学习导航。</p></div>
+        <div id="mistakeList" class="mistake-list"></div>
+      </section>
+
+      <section class="view" id="view-knowledge">
+        <div class="page-heading"><span class="eyebrow">LIGHTWEIGHT RETRIEVAL</span><h1>课程知识库</h1><p>基于关键词匹配的轻量课程检索，可追溯到具体知识卡片。</p></div>
+        <form id="searchForm" class="search-box"><input id="searchInput" placeholder="搜索：循环、数组越界、String…"><button class="primary">检索</button></form>
+        <div id="lessonList" class="lesson-grid"></div>
+        <p class="disclaimer center">当前版本为可演示的关键词检索，不是向量数据库或完整 RAG；语义检索与课程文档导入列为后续扩展。</p>
+      </section>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
