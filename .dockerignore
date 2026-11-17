@@ -1,0 +1,10 @@
+.git
+.env
+node_modules
+outputs
+work
+test
+functions
+worker.js
+wrangler.jsonc
+*.zip

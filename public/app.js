@@ -24,6 +24,28 @@ async function request(url, options) {
   return data;
 }
 
+async function typewriterMarkdown(container, text, scrollRoot) {
+  const output = String(text || "暂时没有可显示的回答。");
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    container.innerHTML = renderMarkdown(output);
+    return;
+  }
+  const plain = document.createElement("div");
+  plain.className = "typing-plain";
+  container.replaceChildren(plain);
+  const targetDuration = Math.min(5200, Math.max(1600, output.length * 7));
+  const interval = 22;
+  const chunkSize = Math.max(1, Math.ceil(output.length / (targetDuration / interval)));
+  for (let index = 0; index < output.length; index += chunkSize) {
+    plain.textContent = output.slice(0, index + chunkSize);
+    scrollRoot.scrollTop = scrollRoot.scrollHeight;
+    await new Promise((resolve) => window.setTimeout(resolve, interval));
+  }
+  container.innerHTML = renderMarkdown(output);
+  container.classList.add("message-print-done");
+  window.setTimeout(() => container.classList.remove("message-print-done"), 320);
+}
+
 function go(view) {
   document.querySelectorAll(".view").forEach((el) => el.classList.toggle("active", el.id === `view-${view}`));
   document.querySelectorAll(".nav-item").forEach((el) => el.classList.toggle("active", el.dataset.view === view));
@@ -322,21 +344,29 @@ document.querySelector("#diagnoseButton").addEventListener("click", async () => 
 });
 document.querySelector("#chatForm").addEventListener("submit", async (event) => {
   event.preventDefault(); const input = document.querySelector("#chatInput"); const message = input.value.trim(); if (!message) return;
+  const submitButton = event.currentTarget.querySelector("button[type='submit']");
+  submitButton.disabled = true;
   const root = document.querySelector("#chatMessages");
   root.insertAdjacentHTML("beforeend", `<div class="message user"><span>你</span><div><p>${escapeHtml(message)}</p></div></div>`); input.value = ""; root.scrollTop = root.scrollHeight;
-  const loading = document.createElement("div"); loading.className = "message assistant"; loading.innerHTML = `<span>✦</span><div class="message-content"><b>CodeMate</b><div class="markdown-body"><p>正在思考…</p></div></div>`; root.append(loading);
+  const loading = document.createElement("div"); loading.className = "message assistant is-thinking"; loading.innerHTML = `<span>✦</span><div class="message-content"><b>CodeMate</b><div class="markdown-body"><div class="thinking-state"><span class="thinking-star">✦</span><span class="thinking-label">正在思考中</span><span class="thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span></div></div></div>`; root.append(loading); root.scrollTop = root.scrollHeight;
   try {
     const data = await request("/api/tutor", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, learnerContext: learnerContext() })
     });
-    loading.querySelector(".markdown-body").innerHTML = renderMarkdown(data.answer);
+    loading.classList.remove("is-thinking"); loading.classList.add("is-printing");
+    await typewriterMarkdown(loading.querySelector(".markdown-body"), data.answer, root);
+    loading.classList.remove("is-printing");
     if (data.sources?.length) loading.querySelector(".message-content").insertAdjacentHTML("beforeend", `<small>参考课程：${data.sources.map((item) => escapeHtml(item.title)).join("、")} · ${data.mode === "demo" ? "演示模式" : "AI 生成"}</small>`);
   } catch (error) {
     const fallback = error.data?.fallback || `暂时无法回答：${error.message}`;
-    loading.querySelector(".markdown-body").innerHTML = renderMarkdown(fallback);
+    loading.classList.remove("is-thinking"); loading.classList.add("is-printing");
+    await typewriterMarkdown(loading.querySelector(".markdown-body"), fallback, root);
+    loading.classList.remove("is-printing");
     if (error.data?.mode === "fallback") loading.querySelector(".message-content").insertAdjacentHTML("beforeend", `<small class="fallback-note">真实模型暂时不可用，已切换到演示回答。</small>`);
+  } finally {
+    submitButton.disabled = false;
   }
   root.scrollTop = root.scrollHeight;
 });

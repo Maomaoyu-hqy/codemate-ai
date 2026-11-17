@@ -11,9 +11,93 @@
   <link rel="stylesheet" href="/practice.css">
   <link rel="stylesheet" href="/report.css">
   <link rel="stylesheet" href="/knowledge.css">
+  <link rel="stylesheet" href="/welcome.css">
+  <link rel="stylesheet" href="/motion.css">
 </head>
-<body>
-  <div class="app-shell">
+<body class="welcome-active">
+  <section class="welcome-screen" id="welcomeScreen" aria-label="CodeMate AI 产品介绍">
+    <div class="welcome-grid" aria-hidden="true"></div>
+    <div class="firefly-field" id="fireflyField" aria-hidden="true"></div>
+    <div class="welcome-glow welcome-glow-a" aria-hidden="true"></div>
+    <div class="welcome-glow welcome-glow-b" aria-hidden="true"></div>
+
+    <header class="welcome-nav">
+      <a class="welcome-brand" href="#welcome" aria-label="CodeMate AI 欢迎页">
+        <span class="welcome-brand-mark">C</span>
+        <span>CodeMate <b>AI</b></span>
+      </a>
+      <div class="welcome-nav-meta"><span id="welcomeAiStatus"><i></i> 正在连接 AI</span><span>面向 Java 初学者</span></div>
+    </header>
+
+    <main class="welcome-main">
+      <section class="welcome-hero">
+        <div class="welcome-copy">
+          <span class="welcome-kicker"><i>✦</i> YOUR AI LEARNING COMPANION</span>
+          <h1><span>让每一次卡住，</span><em>都变成下一步。</em></h1>
+          <p>为 Java 初学者打造的交互式 AI 学习空间：不是替你完成答案，而是通过启发式讲解、即时诊断、自适应练习和学习报告，帮助你真正建立独立解决问题的能力。</p>
+          <div class="welcome-purpose" aria-label="CodeMate AI 核心目标"><span><i>✦</i> 启发式 AI 伴学</span><span><i>⌁</i> 即时代码反馈</span><span><i>↗</i> 个性化成长路径</span></div>
+          <div class="welcome-actions">
+            <button class="welcome-primary" id="enterAppButton" type="button"><span>立即体验</span><b>→</b></button>
+            <button class="welcome-secondary" id="exploreWelcomeButton" type="button"><span>看看它怎么工作</span><b>↓</b></button>
+          </div>
+          <div class="welcome-proof" aria-label="平台内容规模">
+            <span><b>32</b><small>道结构化练习</small></span>
+            <span><b>16</b><small>类 Java 知识卡片</small></span>
+            <span><b>7</b><small>个学习功能模块</small></span>
+          </div>
+        </div>
+
+        <div class="welcome-stage" id="welcomeStage">
+          <div class="stage-orbit orbit-one" aria-hidden="true"></div>
+          <div class="stage-orbit orbit-two" aria-hidden="true"></div>
+          <div class="welcome-demo">
+            <div class="demo-topbar"><div class="demo-dots"><i></i><i></i><i></i></div><span>CodeMate · Learning Studio</span><strong>AI ONLINE</strong></div>
+            <div class="demo-tabs" role="tablist" aria-label="核心功能演示">
+              <button class="active" type="button" data-demo="tutor" role="tab">AI 导师</button>
+              <button type="button" data-demo="diagnose" role="tab">代码诊断</button>
+              <button type="button" data-demo="path" role="tab">学习路径</button>
+            </div>
+
+            <div class="demo-panel active" data-demo-panel="tutor">
+              <div class="demo-chat user"><span>你</span><p>为什么数组下标从 0 开始？</p></div>
+              <div class="demo-chat ai"><span>✦</span><div><b>先想象数组的起点地址…</b><p>下标表示“从起点偏移多少个位置”。第一个元素不需要移动，所以偏移量就是 0。</p><small>结合你的阶段讲解 · 引用「数组基础」知识卡片</small></div></div>
+              <div class="demo-input"><span>继续追问一个细节…</span><i>↗</i></div>
+            </div>
+
+            <div class="demo-panel" data-demo-panel="diagnose">
+              <div class="demo-code-head"><span>Main.java</span><small>● 仅静态检查，不运行代码</small></div>
+              <pre class="demo-code"><span>if</span> (name == <b>"CodeMate"</b>) {
+  System.out.println(<b>"Hello"</b>)
+}</pre>
+              <div class="demo-issues"><div><i>1</i><p><b>字符串比较方式</b><small>建议使用 name.equals("CodeMate")</small></p></div><div><i>2</i><p><b>缺少分号</b><small>println 语句末尾需要 “;”</small></p></div></div>
+            </div>
+
+            <div class="demo-panel" data-demo-panel="path">
+              <div class="path-summary"><div><span>今日学习路线</span><b>为你动态调整</b></div><strong>68%</strong></div>
+              <div class="path-line"><i class="done">✓</i><div><b>变量与类型</b><small>已掌握 · 92 分</small></div><span></span></div>
+              <div class="path-line"><i class="current">2</i><div><b>数组与循环</b><small>当前薄弱点 · 建议巩固</small></div><span></span></div>
+              <div class="path-line"><i>3</i><div><b>方法与面向对象</b><small>下一阶段</small></div></div>
+              <div class="path-tip">✦ 系统已根据错题记录调整明日推荐</div>
+            </div>
+          </div>
+          <div class="floating-chip chip-a">个性化推荐 <b>↗</b></div>
+          <div class="floating-chip chip-b">安全静态诊断 <b>✓</b></div>
+        </div>
+      </section>
+
+      <section class="welcome-experience" id="welcomeExperience">
+        <div class="experience-heading"><span>FROM QUESTION TO GROWTH</span><h2>不是把功能堆在一起，<br>而是把学习连成一条路。</h2></div>
+        <div class="experience-cards">
+          <article><i>01</i><span>UNDERSTAND</span><h3>先理解你在哪里</h3><p>根据学习阶段、目标和每日题量生成专属起点，不用在海量内容里迷路。</p></article>
+          <article><i>02</i><span>INTERACT</span><h3>在互动中把问题想明白</h3><p>AI 导师用提示和追问引导思考，代码诊断即时指出常见错误与修改方向。</p></article>
+          <article><i>03</i><span>ADAPT</span><h3>让每次练习影响下一步</h3><p>错题、得分和知识掌握度共同驱动推荐，形成可观察、可调整的学习闭环。</p></article>
+        </div>
+        <div class="welcome-bottom-cta"><div><span>READY TO START?</span><h2>今天，也让代码更清晰一点。</h2></div><button class="welcome-primary" data-enter-app type="button"><span>进入学习空间</span><b>→</b></button></div>
+      </section>
+    </main>
+  </section>
+
+  <div class="app-shell" id="appShell" aria-hidden="true" inert>
     <aside class="sidebar">
       <a class="brand" href="#home" aria-label="CodeMate AI 首页">
         <span class="brand-mark">C</span><span>CodeMate <b>AI</b></span>
@@ -39,6 +123,7 @@
     <main>
       <header class="topbar">
         <button class="menu-button" id="menuButton" aria-label="打开菜单">☰</button>
+        <button class="intro-button" id="introButton" type="button">✦ 项目介绍</button>
         <div class="mode-pill"><i></i><span id="modeText">正在连接…</span></div>
         <div class="streak">🔥 连续学习 <b id="streak">1</b> 天</div>
       </header>
@@ -203,6 +288,7 @@
     </section>
   </div>
   <div id="toast" class="toast" role="status"></div>
+  <script src="/welcome.js"></script>
   <script type="module" src="/app.js"></script>
 </body>
 </html>
