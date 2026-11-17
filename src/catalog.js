@@ -104,10 +104,10 @@ export const exercises = [
     starter: "int[] nums = {2, 4, 6, 8};\nint sum = 0;\n// 在这里编写代码",
     checks: [
       { pattern: "for\\s*\\(|while\\s*\\(", message: "使用循环遍历" },
-      { pattern: "nums\\.length", message: "使用数组长度控制边界" },
+      { pattern: "nums\\.length|for\\s*\\(\\s*int\\s+\\w+\\s*:\\s*nums\\s*\\)", message: "使用数组长度控制边界或增强 for 遍历" },
       { pattern: "sum\\s*\\+=|sum\\s*=\\s*sum\\s*\\+", message: "将元素累加到 sum" }
     ],
-    explanation: "遍历下标 0 到 nums.length - 1，并用 sum += nums[i] 累加。"
+    explanation: "可以用下标循环配合 nums.length 和 nums[i]，也可以用增强 for 循环直接取得每个元素并累加到 sum。"
   }
 ];
 

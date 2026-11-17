@@ -26,6 +26,13 @@ test("代码题只进行静态结构检查", () => {
   assert.match(result.disclaimer, /不执行用户代码/);
 });
 
+test("数组求和同时接受下标循环和增强 for 循环", () => {
+  const indexed = "for (int i = 0; i < nums.length; i++) { sum += nums[i]; }";
+  const enhanced = "for (int num : nums) { sum += num; }";
+  assert.equal(judgeExercise("q4", indexed).body.passed, true);
+  assert.equal(judgeExercise("q4", enhanced).body.passed, true);
+});
+
 test("课程检索返回相关知识", () => {
   const result = retrieveLessons("数组下标越界怎么办");
   assert.equal(result[0].id, "array");
