@@ -41,6 +41,9 @@ test("课程和题库覆盖 16 个 Java 知识领域", () => {
   assert.equal(lessonIds.size, 16);
   for (const lesson of lessons) {
     assert.equal(exercises.filter((item) => item.knowledge === lesson.id).length, 2);
+    assert.equal(lesson.resource.platform, "中国大学MOOC");
+    assert.match(lesson.resource.url, /^https:\/\/www\.icourse163\.org\/course\//);
+    assert.ok(lesson.resource.topic);
   }
   assert.ok(exercises.every((item) => lessonIds.has(item.knowledge)));
 });

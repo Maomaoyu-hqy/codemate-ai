@@ -4,6 +4,7 @@ import { KNOWLEDGE_LABELS, STAGE_TOPIC_ORDER, localDateKey, selectDailyExercises
 import { analyzeLearningReport, toAiReportContext } from "./report.js";
 
 const initialState = { attempts: [], mistakes: {}, diagnoses: 0, streak: 1, lastVisit: null };
+const REPORT_CACHE_VERSION = 2;
 const state = loadState();
 let exercises = [];
 let lessons = [];
@@ -107,14 +108,14 @@ function renderReport() {
     : `<span class="subtle">${latestReport.total ? "暂未发现明显薄弱点" : "等待答题数据"}</span>`;
   const nextLesson = lessons.find((item) => item.id === latestReport.nextTopic?.id);
   document.querySelector("#reportNext").innerHTML = `<span class="report-next-icon">→</span><div><h4>优先学习：${escapeHtml(latestReport.nextTopic?.label || "变量与类型")}</h4><p>${escapeHtml(nextLesson?.summary || "完成对应知识点的练习，并及时复盘错题。")}</p><button class="text-button" data-go="practice">去完成推荐题 →</button></div>`;
-  const trendLabel = !latestReport.total ? "等待数据" : latestReport.trendDelta > 5 ? `↑ 提升 ${latestReport.trendDelta} 分` : latestReport.trendDelta < -5 ? `↓ 波动 ${Math.abs(latestReport.trendDelta)} 分` : "→ 表现稳定";
+  const trendLabel = !latestReport.total ? "等待数据" : latestReport.trendStatus !== "compared" ? "数据积累中" : latestReport.trendDelta > 5 ? `↑ 提升 ${latestReport.trendDelta} 分` : latestReport.trendDelta < -5 ? `↓ 波动 ${Math.abs(latestReport.trendDelta)} 分` : "→ 表现稳定";
   document.querySelector("#reportTrendLabel").textContent = trendLabel;
   document.querySelector("#reportTrend").innerHTML = latestReport.days.map((day) => `<div class="trend-day"><b>${day.count ? `${day.score}分` : "—"}</b><div class="trend-bar-wrap"><i class="trend-bar" style="height:${day.count ? Math.max(8, day.score) : 5}%" title="${day.label}：${day.count} 次练习，平均 ${day.score} 分"></i></div><small>${day.label}</small></div>`).join("");
   const button = document.querySelector("#generateReportButton");
   button.disabled = latestReport.total === 0;
   button.title = latestReport.total ? "根据当前汇总数据生成报告" : "请先完成至少一道练习";
   const aiRoot = document.querySelector("#aiReportContent");
-  if (state.aiReport?.answer) {
+  if (state.aiReport?.answer && state.aiReport.version === REPORT_CACHE_VERSION) {
     aiRoot.innerHTML = `<div class="markdown-body">${renderMarkdown(state.aiReport.answer)}</div><small class="report-ai-meta">生成于 ${escapeHtml(new Date(state.aiReport.generatedAt).toLocaleString("zh-CN"))} · ${state.aiReport.mode === "api" ? "AI 生成" : "本地演示总结"}</small>`;
   } else {
     aiRoot.innerHTML = `<div class="report-ai-empty">${latestReport.total ? "点击“AI 生成学习总结”，让 CodeMate 根据汇总数据制定未来 7 天计划。" : "完成至少一道练习后即可生成学习总结。"}</div>`;
@@ -135,13 +136,13 @@ async function generateAiReport() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ reportContext: toAiReportContext(latestReport, profile) })
     });
-    state.aiReport = { answer: data.answer, mode: data.mode, generatedAt: new Date().toISOString() };
+    state.aiReport = { answer: data.answer, mode: data.mode, generatedAt: new Date().toISOString(), version: REPORT_CACHE_VERSION };
     saveState();
     toast("学习总结已生成");
   } catch (error) {
     const fallback = error.data?.fallback;
     if (fallback) {
-      state.aiReport = { answer: fallback, mode: "demo", generatedAt: new Date().toISOString() };
+      state.aiReport = { answer: fallback, mode: "demo", generatedAt: new Date().toISOString(), version: REPORT_CACHE_VERSION };
       saveState();
       toast("AI 暂时不可用，已生成本地总结");
     } else {
@@ -160,6 +161,7 @@ function openProfile() {
   document.querySelector(`[name="stage"][value="${profile.stage}"]`).checked = true;
   document.querySelector(`[name="dailyGoal"][value="${profile.dailyGoal}"]`).checked = true;
   document.querySelector("#profileTitle").textContent = state.profile ? "编辑学习档案" : "创建你的学习档案";
+  document.querySelector("#profileResetActions").hidden = !state.profile;
   document.querySelector("#profileModal").hidden = false;
   document.body.style.overflow = "hidden";
   setTimeout(() => document.querySelector("#profileNickname").focus(), 0);
@@ -238,7 +240,10 @@ function renderMistakes() {
 }
 
 function renderLessons(items = lessons) {
-  document.querySelector("#lessonList").innerHTML = items.length ? items.map((item) => `<article class="lesson-card"><span class="tag">${item.level} · ${item.minutes} 分钟</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.summary)}</p><pre>${escapeHtml(item.example)}</pre></article>`).join("") : `<div class="panel empty-state">没有匹配的知识卡片，试试更短的关键词。</div>`;
+  document.querySelector("#lessonList").innerHTML = items.length ? items.map((item) => {
+    const resource = item.resource || {};
+    return `<article class="lesson-card"><span class="tag">${escapeHtml(item.level)} · ${item.minutes} 分钟</span><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.summary)}</p><pre>${escapeHtml(item.example)}</pre><div class="lesson-resource"><div class="lesson-resource-head"><span>免费拓展课程</span><small>${escapeHtml(resource.platform || "课程平台")}</small></div><b>${escapeHtml(resource.course || "Java 系统课程")}</b><p>对应内容：${escapeHtml(resource.topic || item.title)}</p><div class="lesson-resource-actions"><a class="lesson-video-link" href="${escapeHtml(resource.url || "#")}" target="_blank" rel="noopener noreferrer">观看免费课程 ↗</a><button class="text-button lesson-practice" type="button" data-topic="${escapeHtml(item.id)}">做相关练习 →</button></div></div></article>`;
+  }).join("") : `<div class="panel empty-state">没有匹配的知识卡片，试试更短的关键词。</div>`;
 }
 
 async function init() {
@@ -261,12 +266,38 @@ document.addEventListener("click", (event) => {
   const submit = event.target.closest(".submit-answer"); if (submit) submitExercise(submit.closest(".exercise-card"));
   const chip = event.target.closest(".prompt-chip"); if (chip) { document.querySelector("#chatInput").value = chip.textContent; document.querySelector("#chatInput").focus(); }
   const retry = event.target.closest(".retry"); if (retry) { setPracticeMode("all"); go("practice"); document.querySelector(`[data-id="${retry.dataset.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  const lessonPractice = event.target.closest(".lesson-practice");
+  if (lessonPractice) {
+    setPracticeMode("all");
+    go("practice");
+    requestAnimationFrame(() => document.querySelector(`[data-knowledge="${lessonPractice.dataset.topic}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+  }
   const practiceTab = event.target.closest("[data-practice-mode]"); if (practiceTab) setPracticeMode(practiceTab.dataset.practiceMode);
 });
 document.querySelector("#menuButton").addEventListener("click", () => document.querySelector(".sidebar").classList.toggle("open"));
 document.querySelector("#profileButton").addEventListener("click", openProfile);
 document.querySelector("#profileClose").addEventListener("click", closeProfile);
 document.querySelector("#profileModal").addEventListener("click", (event) => { if (event.target.id === "profileModal" && state.profile) closeProfile(); });
+document.querySelector("#resetProfileButton").addEventListener("click", () => {
+  if (!window.confirm("只重置昵称、学习阶段、目标和每日题量？答题记录、错题和学习进度会保留。")) return;
+  delete state.profile;
+  delete state.aiReport;
+  saveState();
+  setPracticeMode("daily");
+  openProfile();
+  toast("学习档案已重置，练习记录仍然保留");
+});
+document.querySelector("#clearAllDataButton").addEventListener("click", () => {
+  if (!window.confirm("确定清除这台浏览器中的全部 CodeMate 数据吗？学习档案、答题记录、错题和报告都会删除，且无法恢复。")) return;
+  Object.keys(state).forEach((key) => delete state[key]);
+  Object.assign(state, { attempts: [], mistakes: {}, diagnoses: 0, streak: 1, lastVisit: null });
+  localStorage.removeItem("codemate-state");
+  saveState();
+  setPracticeMode("daily");
+  renderMistakes();
+  openProfile();
+  toast("全部本地学习数据已清除");
+});
 document.querySelector("#generateReportButton").addEventListener("click", generateAiReport);
 document.querySelector("#profileForm").addEventListener("submit", (event) => {
   event.preventDefault();

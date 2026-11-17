@@ -17,3 +17,9 @@ test("AI Markdown 会转义潜在脚本和 HTML", () => {
   assert.match(html, /&lt;img/);
   assert.match(html, /&lt;script&gt;/);
 });
+
+test("AI Markdown 会忽略没有标题内容的孤立井号", () => {
+  const html = renderMarkdown("## 学习总结\n\n继续保持。\n\n##\n");
+  assert.match(html, /学习总结/);
+  assert.doesNotMatch(html, />##</);
+});

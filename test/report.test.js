@@ -8,6 +8,8 @@ test("没有答题时报告提供安全的学习起点", () => {
   assert.equal(report.topics.length, 16);
   assert.equal(report.nextTopic.id, "variables");
   assert.equal(report.days.length, 7);
+  assert.equal(report.trendStatus, "insufficient");
+  assert.equal(report.trendDelta, null);
 });
 
 test("报告能识别优势、薄弱点和下一步", () => {
@@ -27,6 +29,20 @@ test("报告能识别优势、薄弱点和下一步", () => {
   assert.equal(report.weaknesses[0].id, "loop");
   assert.equal(report.nextTopic.id, "loop");
   assert.equal(report.mistakeCount, 1);
+  assert.equal(report.trendStatus, "insufficient");
+});
+
+test("至少两组练习数据后才计算趋势", () => {
+  const attempts = Array.from({ length: 10 }, (_, index) => ({
+    id: `q${index + 1}`,
+    knowledge: "variables",
+    passed: true,
+    score: index < 5 ? 60 : 80,
+    time: new Date(2026, 10, index + 1).toISOString()
+  }));
+  const report = analyzeLearningReport({ attempts });
+  assert.equal(report.trendStatus, "compared");
+  assert.equal(report.trendDelta, 20);
 });
 
 test("发送给 AI 的报告不包含昵称和原始答案", () => {

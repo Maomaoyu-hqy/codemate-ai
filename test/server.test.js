@@ -13,10 +13,16 @@ test("服务可启动并提供首页和核心 API", async (t) => {
   const pageHtml = await page.text();
   assert.match(pageHtml, /CodeMate AI/);
   assert.match(pageHtml, /个性化学习报告/);
+  assert.match(pageHtml, /仅重置学习档案/);
+  assert.match(pageHtml, /清除全部数据/);
 
   const reportScript = await fetch(`${base}/report.js`);
   assert.equal(reportScript.status, 200);
   assert.match(await reportScript.text(), /analyzeLearningReport/);
+
+  const knowledgeStyles = await fetch(`${base}/knowledge.css`);
+  assert.equal(knowledgeStyles.status, 200);
+  assert.match(await knowledgeStyles.text(), /lesson-resource/);
 
   const status = await fetch(`${base}/api/status`).then((response) => response.json());
   assert.equal(status.ok, true);

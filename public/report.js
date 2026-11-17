@@ -25,7 +25,8 @@ export function analyzeLearningReport({ attempts = [], mistakes = {}, diagnoses 
   const previous = validAttempts.slice(-10, -5);
   const recentScore = average(recent, (item) => item.score);
   const previousScore = average(previous, (item) => item.score);
-  const trendDelta = previous.length ? recentScore - previousScore : 0;
+  const hasTrendComparison = recent.length >= 2 && previous.length >= 2;
+  const trendDelta = hasTrendComparison ? recentScore - previousScore : null;
   const days = Array.from({ length: 7 }, (_, offset) => {
     const date = new Date(now);
     date.setHours(12, 0, 0, 0);
@@ -51,6 +52,7 @@ export function analyzeLearningReport({ attempts = [], mistakes = {}, diagnoses 
     unstarted: topics.filter((item) => item.attempts === 0),
     nextTopic,
     recentScore,
+    trendStatus: hasTrendComparison ? "compared" : "insufficient",
     trendDelta,
     days
   };
@@ -65,6 +67,7 @@ export function toAiReportContext(report, profile = {}) {
     averageScore: report.averageScore,
     masteredTopics: report.mastered,
     mistakeCount: report.mistakeCount,
+    trendStatus: report.trendStatus,
     trendDelta: report.trendDelta,
     strengths: report.strengths.map((item) => ({ topic: item.label, score: item.score })).slice(0, 4),
     weaknesses: report.weaknesses.map((item) => ({ topic: item.label, score: item.score })).slice(0, 4),

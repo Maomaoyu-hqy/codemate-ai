@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/profile.css">
   <link rel="stylesheet" href="/practice.css">
   <link rel="stylesheet" href="/report.css">
+  <link rel="stylesheet" href="/knowledge.css">
 </head>
 <body>
   <div class="app-shell">
@@ -95,7 +96,7 @@
           <article class="report-stat"><b id="reportAttempts">0</b><small>累计练习次数</small></article>
           <article class="report-stat"><b id="reportAccuracy">0%</b><small>总体正确率</small></article>
           <article class="report-stat"><b id="reportAverage">0</b><small>平均得分</small></article>
-          <article class="report-stat"><b id="reportMastered">0/16</b><small>表现稳定的知识点</small></article>
+          <article class="report-stat"><b id="reportMastered">0/16</b><small>表现稳定的知识点</small><span class="report-stat-note">至少练习 2 次且平均分 ≥ 80%</span></article>
         </div>
         <div class="report-layout">
           <article class="report-card">
@@ -174,7 +175,8 @@
         <div class="page-heading"><span class="eyebrow">LIGHTWEIGHT RETRIEVAL</span><h1>课程知识库</h1><p>基于关键词匹配的轻量课程检索，可追溯到具体知识卡片。</p></div>
         <form id="searchForm" class="search-box"><input id="searchInput" placeholder="搜索：循环、数组越界、String…"><button class="primary">检索</button></form>
         <div id="lessonList" class="lesson-grid"></div>
-        <p class="disclaimer center">当前版本为可演示的关键词检索，不是向量数据库或完整 RAG；语义检索与课程文档导入列为后续扩展。</p>
+        <p class="lesson-source-note">知识卡片与练习为 CodeMate 原创整理；拓展课程链接跳转至中国大学MOOC官方页面，不存储或转载第三方视频。课程开放状态与登录要求以平台页面为准。</p>
+        <p class="disclaimer center">当前版本为可演示的关键词检索，不是向量数据库或完整 RAG；语义检索与经授权课程文档导入列为后续扩展。</p>
       </section>
     </main>
   </div>
@@ -192,6 +194,10 @@
         <label class="profile-field"><span>当前学习目标</span><select id="profileGoal" name="goal"><option>夯实 Java 基础</option><option>完成学校课程与考试</option><option>提升算法与解题能力</option><option>准备 Java 项目开发</option><option>为面试打基础</option></select></label>
         <fieldset class="profile-field"><legend>每日练习目标</legend><div class="daily-goals"><label class="daily-choice"><input type="radio" name="dailyGoal" value="2" checked><span>2 题</span></label><label class="daily-choice"><input type="radio" name="dailyGoal" value="4"><span>4 题</span></label><label class="daily-choice"><input type="radio" name="dailyGoal" value="6"><span>6 题</span></label></div></fieldset>
         <div class="profile-privacy">🔒 无需密码。昵称、学习阶段和进度仅保存在当前浏览器，不会上传到服务器。</div>
+        <div class="profile-reset" id="profileResetActions" hidden>
+          <div><b>需要重新开始？</b><small>可以只重设昵称与学习阶段，也可以清除这台浏览器中的全部学习数据。</small></div>
+          <div class="profile-reset-buttons"><button class="ghost" id="resetProfileButton" type="button">仅重置学习档案</button><button class="danger-button" id="clearAllDataButton" type="button">清除全部数据</button></div>
+        </div>
         <div class="profile-actions"><small>之后可点击左下角头像随时修改。</small><button class="primary" type="submit">保存并开始学习</button></div>
       </form>
     </section>

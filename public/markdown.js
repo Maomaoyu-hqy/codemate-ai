@@ -33,6 +33,7 @@ export function renderMarkdown(markdown = "") {
   for (let i = 0; i < lines.length;) {
     const line = lines[i];
     if (!line.trim()) { i += 1; continue; }
+    if (/^#{1,6}\s*$/.test(line)) { i += 1; continue; }
 
     const fence = line.trim().match(/^```([\w+-]*)\s*$/);
     if (fence) {

@@ -10,6 +10,7 @@ const sample = {
   averageScore: 72,
   masteredTopics: 2,
   mistakeCount: 2,
+  trendStatus: "compared",
   trendDelta: 8,
   strengths: [{ topic: "变量与类型", score: 100 }],
   weaknesses: [{ topic: "循环", score: 40 }],
@@ -22,6 +23,12 @@ test("学习报告汇总数据会被限制在安全范围", () => {
   assert.equal(safe.totalAttempts, 0);
   assert.equal(safe.strengths.length, 4);
   assert.ok(safe.strengths[0].topic.length <= 30);
+});
+
+test("趋势数据不足时不会伪造持平结论", () => {
+  const safe = sanitizeReportContext({ ...sample, trendStatus: "insufficient", trendDelta: 0 });
+  assert.equal(safe.trendStatus, "insufficient");
+  assert.equal(safe.trendDelta, null);
 });
 
 test("没有密钥时生成明确的本地学习总结", async () => {

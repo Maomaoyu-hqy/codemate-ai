@@ -1,4 +1,28 @@
-export const lessons = [
+const COURSE_RESOURCES = {
+  beginner: {
+    platform: "中国大学MOOC",
+    course: "浙江大学《零基础学Java语言》",
+    provider: "浙江大学",
+    url: "https://www.icourse163.org/course/ZJU-1001541001?from=searchPage"
+  },
+  advanced: {
+    platform: "中国大学MOOC",
+    course: "北京大学《Java程序设计》",
+    provider: "北京大学",
+    url: "https://www.icourse163.org/course/PKU-1001941004?outVendor=zw_mooc_pclszykctj_"
+  }
+};
+
+const COURSE_TOPICS = {
+  variables: "基础语法与变量", operators: "运算符与表达式", condition: "分支控制", loop: "循环控制",
+  array: "数组", string: "字符串", method: "方法与参数", oop: "类与对象",
+  encapsulation: "封装与访问控制", inheritance: "继承", polymorphism: "多态", exception: "异常处理",
+  collections: "Java 工具类与集合", generics: "泛型与类型安全", io: "流与文件", lambda: "Java 高级语法与函数式思维"
+};
+
+const BEGINNER_TOPICS = new Set(["variables", "operators", "condition", "loop", "array", "string", "method"]);
+
+const lessonCatalog = [
   { id: "variables", title: "变量与数据类型", level: "入门", minutes: 12, keywords: ["变量", "类型", "int", "double", "boolean", "char"], summary: "变量是带有类型和名称的数据容器。Java 是静态类型语言，基本类型与引用类型的使用方式不同。", example: "int age = 18;\ndouble price = 9.9;\nboolean active = true;" },
   { id: "operators", title: "运算符与表达式", level: "入门", minutes: 15, keywords: ["运算符", "表达式", "算术", "逻辑", "自增", "优先级"], summary: "运算符用于计算、比较和组合条件。复杂表达式建议用括号明确顺序，避免依赖记忆优先级。", example: "int total = price * count;\nboolean ok = age >= 18 && active;" },
   { id: "condition", title: "条件判断", level: "入门", minutes: 15, keywords: ["条件", "判断", "if", "else", "switch", "分支"], summary: "if/else 和 switch 根据条件选择执行路径。比较 String 内容应使用 equals，而不是 ==。", example: "if (score >= 60) {\n    System.out.println(\"及格\");\n} else {\n    System.out.println(\"继续加油\");\n}" },
@@ -16,6 +40,14 @@ export const lessons = [
   { id: "io", title: "文件与输入输出", level: "拓展", minutes: 30, keywords: ["文件", "IO", "输入输出", "Files", "Path", "BufferedReader", "流"], summary: "现代 Java 可用 Path 和 Files 处理常见文件任务；资源应及时关闭，推荐 try-with-resources。", example: "Path path = Path.of(\"notes.txt\");\nList<String> lines = Files.readAllLines(path);" },
   { id: "lambda", title: "Lambda 与 Stream 入门", level: "拓展", minutes: 32, keywords: ["Lambda", "Stream", "函数式", "filter", "map", "collect"], summary: "Lambda 简化函数式接口实现；Stream 可声明式地过滤、转换和汇总数据，但不会自动修改原集合。", example: "List<Integer> even = nums.stream()\n    .filter(n -> n % 2 == 0)\n    .toList();" }
 ];
+
+export const lessons = lessonCatalog.map((lesson) => ({
+  ...lesson,
+  resource: {
+    ...(BEGINNER_TOPICS.has(lesson.id) ? COURSE_RESOURCES.beginner : COURSE_RESOURCES.advanced),
+    topic: COURSE_TOPICS[lesson.id]
+  }
+}));
 
 const choice = (id, knowledge, title, difficulty, prompt, options, answer, explanation) => ({
   id, type: "choice", knowledge, title, difficulty, prompt, options, answer, explanation
