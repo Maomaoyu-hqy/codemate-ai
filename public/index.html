@@ -7,6 +7,7 @@
   <title>CodeMate AI · Java 学习搭子</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/markdown.css">
+  <link rel="stylesheet" href="/profile.css">
 </head>
 <body>
   <div class="app-shell">
@@ -28,7 +29,7 @@
         <div class="progress"><i id="goalProgress"></i></div>
         <small id="goalMeta">0 / 2 已完成</small>
       </div>
-      <div class="side-footer"><span class="avatar">J</span><div><b>Java 新手</b><small>持续学习中</small></div></div>
+      <button class="profile-entry" id="profileButton" type="button" aria-label="查看或编辑学习档案"><span class="avatar" id="profileAvatar">J</span><div><b id="profileName">Java 学习者</b><small id="profileStage">尚未设置学习阶段</small></div></button>
     </aside>
 
     <main>
@@ -41,7 +42,7 @@
       <section class="view active" id="view-home">
         <div class="hero">
           <div>
-            <span class="eyebrow">晚上好，未来的 Java 工程师 👋</span>
+            <span class="eyebrow" id="heroGreeting">你好，未来的 Java 工程师 👋</span>
             <h1>今天，也让代码<br><em>更清晰一点。</em></h1>
             <p>从一个小问题开始。CodeMate 会陪你理解概念、定位问题，并根据薄弱点安排下一步。</p>
             <div class="hero-actions"><button class="primary" data-go="practice">开始今日练习 →</button><button class="ghost" data-go="tutor">问问 AI 导师</button></div>
@@ -82,7 +83,7 @@
       </section>
 
       <section class="view" id="view-tutor">
-        <div class="page-heading"><span class="eyebrow">SOCRATIC TUTOR</span><h1>AI 编程导师</h1><p>不是替你写答案，而是陪你把思路想明白。</p></div>
+        <div class="page-heading"><span class="eyebrow">SOCRATIC TUTOR</span><h1>AI 编程导师</h1><p id="tutorIntro">不是替你写答案，而是陪你把思路想明白。</p></div>
         <div class="chat-layout">
           <article class="chat-card">
             <div id="chatMessages" class="messages">
@@ -126,6 +127,24 @@
         <p class="disclaimer center">当前版本为可演示的关键词检索，不是向量数据库或完整 RAG；语义检索与课程文档导入列为后续扩展。</p>
       </section>
     </main>
+  </div>
+  <div class="profile-modal" id="profileModal" role="dialog" aria-modal="true" aria-labelledby="profileTitle" hidden>
+    <section class="profile-dialog">
+      <div class="profile-dialog-head"><div><span class="eyebrow">PERSONAL LEARNING PATH</span><h2 id="profileTitle">创建你的学习档案</h2><p>告诉 CodeMate 你现在的位置，我们会调整练习目标、推荐内容和 AI 讲解难度。</p></div><button class="profile-close" id="profileClose" type="button" aria-label="关闭">×</button></div>
+      <form class="profile-form" id="profileForm">
+        <label class="profile-field"><span>怎么称呼你？</span><input id="profileNickname" name="nickname" type="text" maxlength="16" placeholder="例如：小码同学" required></label>
+        <fieldset class="profile-field"><legend>你目前的 Java 学习阶段</legend><div class="profile-options">
+          <label class="profile-option"><input type="radio" name="stage" value="zero" checked><b>零基础</b><small>还没系统学过，从变量和语法开始</small></label>
+          <label class="profile-option"><input type="radio" name="stage" value="basic"><b>学过一点</b><small>了解变量、判断和循环，需要巩固</small></label>
+          <label class="profile-option"><input type="radio" name="stage" value="practice"><b>能做简单练习</b><small>能写基础程序，想提升解题能力</small></label>
+          <label class="profile-option"><input type="radio" name="stage" value="oop"><b>正在学习面向对象</b><small>正在理解类、对象、封装和继承</small></label>
+        </div></fieldset>
+        <label class="profile-field"><span>当前学习目标</span><select id="profileGoal" name="goal"><option>夯实 Java 基础</option><option>完成学校课程与考试</option><option>提升算法与解题能力</option><option>准备 Java 项目开发</option><option>为面试打基础</option></select></label>
+        <fieldset class="profile-field"><legend>每日练习目标</legend><div class="daily-goals"><label class="daily-choice"><input type="radio" name="dailyGoal" value="2" checked><span>2 题</span></label><label class="daily-choice"><input type="radio" name="dailyGoal" value="4"><span>4 题</span></label><label class="daily-choice"><input type="radio" name="dailyGoal" value="6"><span>6 题</span></label></div></fieldset>
+        <div class="profile-privacy">🔒 无需密码。昵称、学习阶段和进度仅保存在当前浏览器，不会上传到服务器。</div>
+        <div class="profile-actions"><small>之后可点击左下角头像随时修改。</small><button class="primary" type="submit">保存并开始学习</button></div>
+      </form>
+    </section>
   </div>
   <div id="toast" class="toast" role="status"></div>
   <script type="module" src="/app.js"></script>

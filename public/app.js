@@ -1,4 +1,5 @@
 import { escapeHtml, renderMarkdown } from "./markdown.js";
+import { normalizeProfile, STAGE_LABELS, STAGE_STARTS } from "./profile.js";
 
 const initialState = { attempts: [], mistakes: {}, diagnoses: 0, streak: 1, lastVisit: null };
 const state = loadState();
@@ -43,13 +44,14 @@ function learnerContext() {
     .slice(0, 3)
     .map(([id]) => labels[id] || id);
   return {
-    stage: state.profile?.stage || "未设置（按 Java 入门学习者讲解）",
+    stage: state.profile ? STAGE_LABELS[normalizeProfile(state.profile).stage] : "未设置（按 Java 入门学习者讲解）",
     goal: state.profile?.goal || "完成每日练习并理解错题",
     weakPoints
   };
 }
 
 function renderProfile() {
+  const profile = state.profile ? normalizeProfile(state.profile) : null;
   const attempts = state.attempts;
   const passed = attempts.filter((item) => item.passed).length;
   const accuracy = attempts.length ? `${Math.round((passed / attempts.length) * 100)}%` : "—";
@@ -59,15 +61,43 @@ function renderProfile() {
   document.querySelector("#mastered").textContent = Object.values(stats).filter((score) => score >= 80).length;
   document.querySelector("#diagnosisCount").textContent = state.diagnoses;
   document.querySelector("#streak").textContent = state.streak;
+  const nickname = profile?.nickname || "Java 学习者";
+  const stageLabel = profile ? STAGE_LABELS[profile.stage] : "尚未设置学习阶段";
+  document.querySelector("#profileAvatar").textContent = nickname.slice(0, 1).toUpperCase();
+  document.querySelector("#profileName").textContent = nickname;
+  document.querySelector("#profileStage").textContent = stageLabel;
+  const hour = new Date().getHours();
+  const timeGreeting = hour < 6 ? "夜深了" : hour < 12 ? "早上好" : hour < 18 ? "下午好" : "晚上好";
+  document.querySelector("#heroGreeting").textContent = `${timeGreeting}，${nickname} 👋`;
+  document.querySelector("#tutorIntro").textContent = profile ? `将按“${stageLabel}”阶段讲解，并围绕“${profile.goal}”提供提示。` : "不是替你写答案，而是陪你把思路想明白。";
   const todayDone = attempts.filter((item) => new Date(item.time).toDateString() === new Date().toDateString()).length;
-  document.querySelector("#goalProgress").style.width = `${Math.min(100, todayDone / 2 * 100)}%`;
-  document.querySelector("#goalMeta").textContent = `${Math.min(todayDone, 2)} / 2 已完成`;
+  const dailyGoal = profile?.dailyGoal || 2;
+  document.querySelector("#goalText").textContent = `完成 ${dailyGoal} 道练习`;
+  document.querySelector("#goalProgress").style.width = `${Math.min(100, todayDone / dailyGoal * 100)}%`;
+  document.querySelector("#goalMeta").textContent = `${Math.min(todayDone, dailyGoal)} / ${dailyGoal} 已完成`;
   const labels = { variables: "变量", condition: "条件", loop: "循环", array: "数组", method: "方法", oop: "面向对象" };
   document.querySelector("#knowledgeBars").innerHTML = Object.entries(stats).map(([id, score]) => `<div class="bar-row"><span>${labels[id]}</span><div class="bar-track"><i style="width:${score}%"></i></div><b>${score}%</b></div>`).join("");
   const attempted = Object.entries(stats).filter(([, score]) => score > 0).sort((a, b) => a[1] - b[1]);
-  const target = attempted[0]?.[0] || "variables";
+  const target = attempted[0]?.[0] || STAGE_STARTS[profile?.stage] || "variables";
   const matching = lessons.find((item) => item.id === target);
   document.querySelector("#recommendation").innerHTML = matching ? `<div class="rec-row"><span class="rec-icon">${attempted.length ? "↗" : "1"}</span><div><b>${attempted.length ? "巩固薄弱点：" : "建议从这里开始："}${escapeHtml(matching.title)}</b><p>${escapeHtml(matching.summary)}</p></div></div>` : "加载课程后生成推荐。";
+}
+
+function openProfile() {
+  const profile = state.profile ? normalizeProfile(state.profile) : normalizeProfile();
+  document.querySelector("#profileNickname").value = state.profile ? profile.nickname : "";
+  document.querySelector("#profileGoal").value = profile.goal;
+  document.querySelector(`[name="stage"][value="${profile.stage}"]`).checked = true;
+  document.querySelector(`[name="dailyGoal"][value="${profile.dailyGoal}"]`).checked = true;
+  document.querySelector("#profileTitle").textContent = state.profile ? "编辑学习档案" : "创建你的学习档案";
+  document.querySelector("#profileModal").hidden = false;
+  document.body.style.overflow = "hidden";
+  setTimeout(() => document.querySelector("#profileNickname").focus(), 0);
+}
+
+function closeProfile() {
+  document.querySelector("#profileModal").hidden = true;
+  document.body.style.overflow = "";
 }
 
 function renderExercises() {
@@ -120,6 +150,7 @@ async function init() {
     mode.classList.toggle("api", status.aiMode === "api");
     document.querySelector("#modeText").textContent = status.aiMode === "api" ? `AI API · ${status.model}` : "AI 演示模式";
     renderExercises(); renderLessons(); renderProfile();
+    if (!state.profile) openProfile();
   } catch { document.querySelector("#modeText").textContent = "服务连接失败"; toast("无法连接后端服务"); }
 }
 
@@ -133,6 +164,17 @@ document.addEventListener("click", (event) => {
   const retry = event.target.closest(".retry"); if (retry) { go("practice"); document.querySelector(`[data-id="${retry.dataset.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }); }
 });
 document.querySelector("#menuButton").addEventListener("click", () => document.querySelector(".sidebar").classList.toggle("open"));
+document.querySelector("#profileButton").addEventListener("click", openProfile);
+document.querySelector("#profileClose").addEventListener("click", closeProfile);
+document.querySelector("#profileModal").addEventListener("click", (event) => { if (event.target.id === "profileModal" && state.profile) closeProfile(); });
+document.querySelector("#profileForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  state.profile = { ...normalizeProfile(Object.fromEntries(form)), updatedAt: new Date().toISOString() };
+  saveState();
+  closeProfile();
+  toast(`欢迎你，${state.profile.nickname}！学习路线已更新`);
+});
 document.querySelector("#diagnoseButton").addEventListener("click", async () => {
   const button = document.querySelector("#diagnoseButton"); button.disabled = true; button.textContent = "诊断中…";
   try {
