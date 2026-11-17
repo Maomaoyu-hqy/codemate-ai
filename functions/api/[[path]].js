@@ -1,6 +1,7 @@
 import { exercises, lessons, publicExercise } from "../../src/catalog.js";
 import { demoTutorReply, diagnoseJava, judgeExercise, retrieveLessons } from "../../src/engine.js";
 import { generateTutorReply } from "../../src/tutor.js";
+import { demoLearningReport, generateLearningReport } from "../../src/learning-report.js";
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -59,6 +60,20 @@ export async function onRequest({ request, env }) {
           fallback: demoTutorReply(message, retrieveLessons(message, 2)),
           mode: "fallback"
         }, 502);
+      }
+    }
+    if (method === "POST" && path === "/api/report") {
+      const { reportContext = {} } = await readBody(request);
+      try {
+        return json(await generateLearningReport({
+          reportContext,
+          apiKey: env.AI_API_KEY || "",
+          apiBase: env.AI_BASE_URL || "https://api.openai.com/v1",
+          model: env.AI_MODEL || "gpt-4o-mini",
+          maxTokens: env.AI_MAX_TOKENS || 700
+        }));
+      } catch (error) {
+        return json({ error: "学习总结暂时无法生成", detail: error.message, fallback: demoLearningReport(reportContext), mode: "fallback" }, 502);
       }
     }
     return json({ error: "接口不存在" }, 404);

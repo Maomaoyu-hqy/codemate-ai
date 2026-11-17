@@ -10,7 +10,13 @@ test("服务可启动并提供首页和核心 API", async (t) => {
 
   const page = await fetch(`${base}/`);
   assert.equal(page.status, 200);
-  assert.match(await page.text(), /CodeMate AI/);
+  const pageHtml = await page.text();
+  assert.match(pageHtml, /CodeMate AI/);
+  assert.match(pageHtml, /个性化学习报告/);
+
+  const reportScript = await fetch(`${base}/report.js`);
+  assert.equal(reportScript.status, 200);
+  assert.match(await reportScript.text(), /analyzeLearningReport/);
 
   const status = await fetch(`${base}/api/status`).then((response) => response.json());
   assert.equal(status.ok, true);
@@ -30,4 +36,12 @@ test("服务可启动并提供首页和核心 API", async (t) => {
   }).then((response) => response.json());
   assert.equal(tutor.mode, "demo");
   assert.ok(tutor.sources.length > 0);
+
+  const report = await fetch(`${base}/api/report`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reportContext: { totalAttempts: 2, accuracy: 50, nextTopic: "循环" } })
+  }).then((response) => response.json());
+  assert.equal(report.mode, "demo");
+  assert.match(report.answer, /循环/);
 });

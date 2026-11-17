@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { exercises, lessons, publicExercise } from "./src/catalog.js";
 import { demoTutorReply, diagnoseJava, judgeExercise, retrieveLessons } from "./src/engine.js";
 import { generateTutorReply } from "./src/tutor.js";
+import { demoLearningReport, generateLearningReport } from "./src/learning-report.js";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 const publicRoot = join(root, "public");
@@ -48,6 +49,11 @@ async function api(req, res, url) {
     if (!String(message).trim()) return json(res, 400, { error: "请输入问题" });
     try { return json(res, 200, await generateTutorReply({ message, learnerContext, apiKey, apiBase, model, maxTokens })); }
     catch (error) { return json(res, 502, { error: "模型服务暂时不可用", detail: error.message, fallback: demoTutorReply(message, retrieveLessons(message, 2)), mode: "fallback" }); }
+  }
+  if (req.method === "POST" && url.pathname === "/api/report") {
+    const { reportContext = {} } = await readBody(req);
+    try { return json(res, 200, await generateLearningReport({ reportContext, apiKey, apiBase, model, maxTokens })); }
+    catch (error) { return json(res, 502, { error: "学习总结暂时无法生成", detail: error.message, fallback: demoLearningReport(reportContext), mode: "fallback" }); }
   }
   return json(res, 404, { error: "接口不存在" });
 }

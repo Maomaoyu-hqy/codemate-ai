@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/markdown.css">
   <link rel="stylesheet" href="/profile.css">
   <link rel="stylesheet" href="/practice.css">
+  <link rel="stylesheet" href="/report.css">
 </head>
 <body>
   <div class="app-shell">
@@ -18,6 +19,7 @@
       </a>
       <nav id="nav" aria-label="主导航">
         <button class="nav-item active" data-view="home"><span>⌂</span>学习概览</button>
+        <button class="nav-item" data-view="report"><span>◫</span>学习报告</button>
         <button class="nav-item" data-view="tutor"><span>✦</span>AI 编程导师</button>
         <button class="nav-item" data-view="diagnose"><span>⌁</span>代码诊断</button>
         <button class="nav-item" data-view="practice"><span>✓</span>题库练习</button>
@@ -79,6 +81,46 @@
           <article class="panel">
             <div class="panel-head"><div><span class="eyebrow">KNOWLEDGE MAP</span><h3>知识掌握度</h3></div></div>
             <div id="knowledgeBars" class="knowledge-bars"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-report">
+        <div class="page-heading"><span class="eyebrow">PERSONAL LEARNING REPORT</span><h1>个性化学习报告</h1><p>把每一次练习变成下一步学习方向。</p></div>
+        <div class="report-hero">
+          <div><span class="eyebrow">CODEMATE INSIGHT</span><h2 id="reportGreeting">你的学习表现正在积累</h2><p id="reportHeadline">完成练习后，这里会分析强项、薄弱点和近期变化。</p></div>
+          <button class="primary" id="generateReportButton" type="button">✦ AI 生成学习总结</button>
+        </div>
+        <div class="report-stats">
+          <article class="report-stat"><b id="reportAttempts">0</b><small>累计练习次数</small></article>
+          <article class="report-stat"><b id="reportAccuracy">0%</b><small>总体正确率</small></article>
+          <article class="report-stat"><b id="reportAverage">0</b><small>平均得分</small></article>
+          <article class="report-stat"><b id="reportMastered">0/16</b><small>表现稳定的知识点</small></article>
+        </div>
+        <div class="report-layout">
+          <article class="report-card">
+            <div class="panel-head"><div><span class="eyebrow">KNOWLEDGE MASTERY</span><h3>16 类知识掌握度</h3></div></div>
+            <div id="reportTopics" class="report-topic-list"></div>
+          </article>
+          <div class="report-insights">
+            <article class="report-card">
+              <span class="eyebrow">LEARNING SIGNALS</span><h3>强项与薄弱点</h3>
+              <div class="report-insight"><b>当前优势</b><div id="reportStrengths" class="report-chips"></div></div>
+              <div class="report-insight warning"><b>优先巩固</b><div id="reportWeaknesses" class="report-chips"></div></div>
+            </article>
+            <article class="report-card">
+              <span class="eyebrow">NEXT ACTION</span><h3>建议下一步</h3>
+              <div id="reportNext" class="report-next"></div>
+            </article>
+            <article class="report-card">
+              <div class="panel-head"><div><span class="eyebrow">LAST 7 DAYS</span><h3>近期表现</h3></div><span class="trend-label" id="reportTrendLabel">等待数据</span></div>
+              <div id="reportTrend" class="report-trend"></div>
+            </article>
+          </div>
+          <article class="report-card report-card-wide">
+            <div class="panel-head"><div><span class="eyebrow">AI LEARNING REVIEW</span><h3>AI 学习总结</h3></div></div>
+            <div id="aiReportContent" class="report-ai"><div class="report-ai-empty">点击“AI 生成学习总结”，让 CodeMate 根据汇总数据制定未来 7 天计划。</div></div>
+            <p class="report-privacy">🔒 AI 只接收学习阶段、目标、得分和知识点汇总，不上传昵称、答案内容或代码。</p>
           </article>
         </div>
       </section>

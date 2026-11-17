@@ -1,18 +1,20 @@
 import { escapeHtml, renderMarkdown } from "./markdown.js";
 import { normalizeProfile, STAGE_LABELS, STAGE_STARTS } from "./profile.js";
 import { KNOWLEDGE_LABELS, STAGE_TOPIC_ORDER, localDateKey, selectDailyExercises } from "./recommend.js";
+import { analyzeLearningReport, toAiReportContext } from "./report.js";
 
 const initialState = { attempts: [], mistakes: {}, diagnoses: 0, streak: 1, lastVisit: null };
 const state = loadState();
 let exercises = [];
 let lessons = [];
 let practiceMode = "daily";
+let latestReport = null;
 
 function loadState() {
   try { return { ...initialState, ...JSON.parse(localStorage.getItem("codemate-state") || "{}") }; }
   catch { return { ...initialState }; }
 }
-function saveState() { localStorage.setItem("codemate-state", JSON.stringify(state)); renderProfile(); }
+function saveState() { localStorage.setItem("codemate-state", JSON.stringify(state)); renderProfile(); renderReport(); }
 function toast(message) { const el = document.querySelector("#toast"); el.textContent = message; el.classList.add("show"); setTimeout(() => el.classList.remove("show"), 2200); }
 async function request(url, options) {
   const response = await fetch(url, options);
@@ -27,6 +29,7 @@ function go(view) {
   document.querySelector(".sidebar").classList.remove("open");
   window.scrollTo({ top: 0, behavior: "smooth" });
   if (view === "mistakes") renderMistakes();
+  if (view === "report") renderReport();
 }
 
 function knowledgeStats() {
@@ -82,6 +85,72 @@ function renderProfile() {
   const target = attempted[0]?.[0] || STAGE_STARTS[profile?.stage] || "variables";
   const matching = lessons.find((item) => item.id === target);
   document.querySelector("#recommendation").innerHTML = matching ? `<div class="rec-row"><span class="rec-icon">${attempted.length ? "↗" : "1"}</span><div><b>${attempted.length ? "巩固薄弱点：" : "建议从这里开始："}${escapeHtml(matching.title)}</b><p>${escapeHtml(matching.summary)}</p></div></div>` : "加载课程后生成推荐。";
+}
+
+function renderReport() {
+  const profile = state.profile ? normalizeProfile(state.profile) : normalizeProfile();
+  latestReport = analyzeLearningReport({ attempts: state.attempts, mistakes: state.mistakes, diagnoses: state.diagnoses, profile });
+  document.querySelector("#reportGreeting").textContent = `${profile.nickname}，这是你的学习分析`;
+  document.querySelector("#reportHeadline").textContent = latestReport.total
+    ? `已积累 ${latestReport.total} 次练习记录；系统会根据真实得分持续调整建议。`
+    : "先完成今日推荐题，报告会根据真实表现自动更新。";
+  document.querySelector("#reportAttempts").textContent = latestReport.total;
+  document.querySelector("#reportAccuracy").textContent = `${latestReport.accuracy}%`;
+  document.querySelector("#reportAverage").textContent = latestReport.averageScore;
+  document.querySelector("#reportMastered").textContent = `${latestReport.mastered}/16`;
+  document.querySelector("#reportTopics").innerHTML = latestReport.topics.map((item) => `<div class="report-topic ${item.status}"><div class="report-topic-name"><b>${escapeHtml(item.label)}</b><small>${item.attempts ? `${item.attempts} 次练习` : "尚未练习"}</small></div><div class="report-topic-track"><i style="width:${item.attempts ? item.score : 0}%"></i></div><strong>${item.attempts ? `${item.score}%` : "—"}</strong></div>`).join("");
+  document.querySelector("#reportStrengths").innerHTML = latestReport.strengths.length
+    ? latestReport.strengths.map((item) => `<span class="report-chip">${escapeHtml(item.label)} ${item.score}%</span>`).join("")
+    : `<span class="subtle">继续练习后识别</span>`;
+  document.querySelector("#reportWeaknesses").innerHTML = latestReport.weaknesses.length
+    ? latestReport.weaknesses.map((item) => `<span class="report-chip weak">${escapeHtml(item.label)} ${item.score}%</span>`).join("")
+    : `<span class="subtle">${latestReport.total ? "暂未发现明显薄弱点" : "等待答题数据"}</span>`;
+  const nextLesson = lessons.find((item) => item.id === latestReport.nextTopic?.id);
+  document.querySelector("#reportNext").innerHTML = `<span class="report-next-icon">→</span><div><h4>优先学习：${escapeHtml(latestReport.nextTopic?.label || "变量与类型")}</h4><p>${escapeHtml(nextLesson?.summary || "完成对应知识点的练习，并及时复盘错题。")}</p><button class="text-button" data-go="practice">去完成推荐题 →</button></div>`;
+  const trendLabel = !latestReport.total ? "等待数据" : latestReport.trendDelta > 5 ? `↑ 提升 ${latestReport.trendDelta} 分` : latestReport.trendDelta < -5 ? `↓ 波动 ${Math.abs(latestReport.trendDelta)} 分` : "→ 表现稳定";
+  document.querySelector("#reportTrendLabel").textContent = trendLabel;
+  document.querySelector("#reportTrend").innerHTML = latestReport.days.map((day) => `<div class="trend-day"><b>${day.count ? `${day.score}分` : "—"}</b><div class="trend-bar-wrap"><i class="trend-bar" style="height:${day.count ? Math.max(8, day.score) : 5}%" title="${day.label}：${day.count} 次练习，平均 ${day.score} 分"></i></div><small>${day.label}</small></div>`).join("");
+  const button = document.querySelector("#generateReportButton");
+  button.disabled = latestReport.total === 0;
+  button.title = latestReport.total ? "根据当前汇总数据生成报告" : "请先完成至少一道练习";
+  const aiRoot = document.querySelector("#aiReportContent");
+  if (state.aiReport?.answer) {
+    aiRoot.innerHTML = `<div class="markdown-body">${renderMarkdown(state.aiReport.answer)}</div><small class="report-ai-meta">生成于 ${escapeHtml(new Date(state.aiReport.generatedAt).toLocaleString("zh-CN"))} · ${state.aiReport.mode === "api" ? "AI 生成" : "本地演示总结"}</small>`;
+  } else {
+    aiRoot.innerHTML = `<div class="report-ai-empty">${latestReport.total ? "点击“AI 生成学习总结”，让 CodeMate 根据汇总数据制定未来 7 天计划。" : "完成至少一道练习后即可生成学习总结。"}</div>`;
+  }
+}
+
+async function generateAiReport() {
+  if (!latestReport?.total) return toast("请先完成至少一道练习");
+  const button = document.querySelector("#generateReportButton");
+  const root = document.querySelector("#aiReportContent");
+  button.disabled = true;
+  button.textContent = "正在分析…";
+  root.innerHTML = `<div class="report-ai-empty">CodeMate 正在整理你的学习表现…</div>`;
+  try {
+    const profile = state.profile ? normalizeProfile(state.profile) : normalizeProfile();
+    const data = await request("/api/report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reportContext: toAiReportContext(latestReport, profile) })
+    });
+    state.aiReport = { answer: data.answer, mode: data.mode, generatedAt: new Date().toISOString() };
+    saveState();
+    toast("学习总结已生成");
+  } catch (error) {
+    const fallback = error.data?.fallback;
+    if (fallback) {
+      state.aiReport = { answer: fallback, mode: "demo", generatedAt: new Date().toISOString() };
+      saveState();
+      toast("AI 暂时不可用，已生成本地总结");
+    } else {
+      root.innerHTML = `<div class="report-ai-empty">生成失败：${escapeHtml(error.message)}</div>`;
+    }
+  } finally {
+    button.disabled = false;
+    button.textContent = "✦ AI 生成学习总结";
+  }
 }
 
 function openProfile() {
@@ -147,6 +216,7 @@ async function submitExercise(card) {
     const result = await request("/api/judge", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: card.dataset.id, answer }) });
     const record = { id: card.dataset.id, knowledge: result.knowledge, passed: result.passed, score: result.score, time: new Date().toISOString() };
     state.attempts.push(record);
+    delete state.aiReport;
     if (!result.passed) state.mistakes[card.dataset.id] = { ...record, count: (state.mistakes[card.dataset.id]?.count || 0) + 1 };
     else delete state.mistakes[card.dataset.id];
     saveState();
@@ -178,7 +248,7 @@ async function init() {
     const mode = document.querySelector(".mode-pill");
     mode.classList.toggle("api", status.aiMode === "api");
     document.querySelector("#modeText").textContent = status.aiMode === "api" ? `AI API · ${status.model}` : "AI 演示模式";
-    renderExercises(); renderLessons(); renderProfile();
+    renderExercises(); renderLessons(); renderProfile(); renderReport();
     if (!state.profile) openProfile();
   } catch { document.querySelector("#modeText").textContent = "服务连接失败"; toast("无法连接后端服务"); }
 }
@@ -197,10 +267,12 @@ document.querySelector("#menuButton").addEventListener("click", () => document.q
 document.querySelector("#profileButton").addEventListener("click", openProfile);
 document.querySelector("#profileClose").addEventListener("click", closeProfile);
 document.querySelector("#profileModal").addEventListener("click", (event) => { if (event.target.id === "profileModal" && state.profile) closeProfile(); });
+document.querySelector("#generateReportButton").addEventListener("click", generateAiReport);
 document.querySelector("#profileForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
   state.profile = { ...normalizeProfile(Object.fromEntries(form)), updatedAt: new Date().toISOString() };
+  delete state.aiReport;
   saveState();
   setPracticeMode("daily");
   closeProfile();
