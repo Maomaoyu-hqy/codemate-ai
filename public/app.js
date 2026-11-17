@@ -1,10 +1,12 @@
 import { escapeHtml, renderMarkdown } from "./markdown.js";
 import { normalizeProfile, STAGE_LABELS, STAGE_STARTS } from "./profile.js";
+import { KNOWLEDGE_LABELS, STAGE_TOPIC_ORDER, localDateKey, selectDailyExercises } from "./recommend.js";
 
 const initialState = { attempts: [], mistakes: {}, diagnoses: 0, streak: 1, lastVisit: null };
 const state = loadState();
 let exercises = [];
 let lessons = [];
+let practiceMode = "daily";
 
 function loadState() {
   try { return { ...initialState, ...JSON.parse(localStorage.getItem("codemate-state") || "{}") }; }
@@ -28,7 +30,7 @@ function go(view) {
 }
 
 function knowledgeStats() {
-  const all = ["variables", "condition", "loop", "array", "method", "oop"];
+  const all = Object.keys(KNOWLEDGE_LABELS);
   return Object.fromEntries(all.map((id) => {
     const attempts = state.attempts.filter((item) => item.knowledge === id);
     const score = attempts.length ? Math.round(attempts.reduce((sum, item) => sum + item.score, 0) / attempts.length) : 0;
@@ -37,12 +39,11 @@ function knowledgeStats() {
 }
 
 function learnerContext() {
-  const labels = { variables: "变量", condition: "条件判断", loop: "循环", array: "数组", method: "方法", oop: "面向对象" };
   const weakPoints = Object.entries(knowledgeStats())
     .filter(([, score]) => score > 0)
     .sort((a, b) => a[1] - b[1])
     .slice(0, 3)
-    .map(([id]) => labels[id] || id);
+    .map(([id]) => KNOWLEDGE_LABELS[id] || id);
   return {
     stage: state.profile ? STAGE_LABELS[normalizeProfile(state.profile).stage] : "未设置（按 Java 入门学习者讲解）",
     goal: state.profile?.goal || "完成每日练习并理解错题",
@@ -70,14 +71,14 @@ function renderProfile() {
   const timeGreeting = hour < 6 ? "夜深了" : hour < 12 ? "早上好" : hour < 18 ? "下午好" : "晚上好";
   document.querySelector("#heroGreeting").textContent = `${timeGreeting}，${nickname} 👋`;
   document.querySelector("#tutorIntro").textContent = profile ? `将按“${stageLabel}”阶段讲解，并围绕“${profile.goal}”提供提示。` : "不是替你写答案，而是陪你把思路想明白。";
-  const todayDone = attempts.filter((item) => new Date(item.time).toDateString() === new Date().toDateString()).length;
+  const todayDone = new Set(attempts.filter((item) => localDateKey(new Date(item.time)) === localDateKey()).map((item) => item.id)).size;
   const dailyGoal = profile?.dailyGoal || 2;
   document.querySelector("#goalText").textContent = `完成 ${dailyGoal} 道练习`;
   document.querySelector("#goalProgress").style.width = `${Math.min(100, todayDone / dailyGoal * 100)}%`;
   document.querySelector("#goalMeta").textContent = `${Math.min(todayDone, dailyGoal)} / ${dailyGoal} 已完成`;
-  const labels = { variables: "变量", condition: "条件", loop: "循环", array: "数组", method: "方法", oop: "面向对象" };
-  document.querySelector("#knowledgeBars").innerHTML = Object.entries(stats).map(([id, score]) => `<div class="bar-row"><span>${labels[id]}</span><div class="bar-track"><i style="width:${score}%"></i></div><b>${score}%</b></div>`).join("");
   const attempted = Object.entries(stats).filter(([, score]) => score > 0).sort((a, b) => a[1] - b[1]);
+  const visibleKnowledge = [...new Set([...attempted.map(([id]) => id), ...STAGE_TOPIC_ORDER[profile?.stage || "zero"]])].slice(0, 8);
+  document.querySelector("#knowledgeBars").innerHTML = visibleKnowledge.map((id) => `<div class="bar-row"><span>${KNOWLEDGE_LABELS[id]}</span><div class="bar-track"><i style="width:${stats[id]}%"></i></div><b>${stats[id]}%</b></div>`).join("");
   const target = attempted[0]?.[0] || STAGE_STARTS[profile?.stage] || "variables";
   const matching = lessons.find((item) => item.id === target);
   document.querySelector("#recommendation").innerHTML = matching ? `<div class="rec-row"><span class="rec-icon">${attempted.length ? "↗" : "1"}</span><div><b>${attempted.length ? "巩固薄弱点：" : "建议从这里开始："}${escapeHtml(matching.title)}</b><p>${escapeHtml(matching.summary)}</p></div></div>` : "加载课程后生成推荐。";
@@ -100,13 +101,40 @@ function closeProfile() {
   document.body.style.overflow = "";
 }
 
-function renderExercises() {
+function dailyExercises() {
+  return selectDailyExercises({ exercises, attempts: state.attempts, profile: state.profile ? normalizeProfile(state.profile) : normalizeProfile() });
+}
+
+function updatePracticeMeta(daily = dailyExercises()) {
+  document.querySelector("#dailyQuestionCount").textContent = daily.length;
+  document.querySelector("#allQuestionCount").textContent = exercises.length;
+  document.querySelectorAll("[data-practice-mode]").forEach((button) => button.classList.toggle("active", button.dataset.practiceMode === practiceMode));
+  const summary = document.querySelector("#practiceSummary");
+  if (practiceMode === "all") {
+    summary.textContent = `共 ${exercises.length} 道结构化题目，覆盖 ${lessons.length} 个 Java 知识领域。`;
+    return;
+  }
+  const todayIds = new Set(state.attempts.filter((item) => localDateKey(new Date(item.time)) === localDateKey()).map((item) => item.id));
+  const completed = daily.filter((item) => todayIds.has(item.id)).length;
+  const stage = state.profile ? STAGE_LABELS[normalizeProfile(state.profile).stage] : "零基础";
+  summary.textContent = `今日已完成 ${completed}/${daily.length} · 根据“${stage}”阶段和历史薄弱点推荐，明天会轮换题目。`;
+}
+
+function setPracticeMode(mode) {
+  practiceMode = mode === "all" ? "all" : "daily";
+  renderExercises();
+}
+
+function renderExercises(items) {
   const root = document.querySelector("#exerciseList");
-  root.innerHTML = exercises.map((item, index) => {
+  const daily = dailyExercises();
+  const shown = items || (practiceMode === "all" ? exercises : daily);
+  updatePracticeMeta(daily);
+  root.innerHTML = shown.map((item, index) => {
     const answer = item.type === "choice"
       ? `<div class="options">${item.options.map((option, i) => `<button class="option" data-answer="${i}"><b>${String.fromCharCode(65 + i)}.</b> ${escapeHtml(option)}</button>`).join("")}</div><input type="hidden" class="answer-value">`
       : `<textarea class="code-answer" spellcheck="false">${escapeHtml(item.starter)}</textarea>`;
-    return `<article class="exercise-card" data-id="${item.id}" data-knowledge="${item.knowledge}"><div class="exercise-meta"><span class="tag">${item.type === "code" ? "代码题" : "选择题"}</span><span class="tag">${item.difficulty}</span><span class="tag">第 ${index + 1} 题</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.prompt)}</p>${answer}<div class="exercise-actions"><button class="primary submit-answer">提交答案</button><span class="feedback"></span></div><div class="checks"></div></article>`;
+    return `<article class="exercise-card" data-id="${item.id}" data-knowledge="${item.knowledge}"><div class="exercise-meta"><span class="tag">${item.type === "code" ? "代码题" : "选择题"}</span><span class="tag">${item.difficulty}</span><span class="tag">${escapeHtml(KNOWLEDGE_LABELS[item.knowledge] || item.knowledge)}</span><span class="tag">第 ${index + 1} 题</span></div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.prompt)}</p>${answer}<div class="exercise-actions"><button class="primary submit-answer">提交答案</button><span class="feedback"></span></div><div class="checks"></div></article>`;
   }).join("");
 }
 
@@ -122,6 +150,7 @@ async function submitExercise(card) {
     if (!result.passed) state.mistakes[card.dataset.id] = { ...record, count: (state.mistakes[card.dataset.id]?.count || 0) + 1 };
     else delete state.mistakes[card.dataset.id];
     saveState();
+    updatePracticeMeta();
     const feedback = card.querySelector(".feedback");
     feedback.className = `feedback ${result.passed ? "pass" : "fail"}`;
     feedback.textContent = `${result.feedback} 得分 ${result.score}。${result.explanation}`;
@@ -161,7 +190,8 @@ document.addEventListener("click", (event) => {
   if (option) { const card = option.closest(".exercise-card"); card.querySelectorAll(".option").forEach((el) => el.classList.remove("selected")); option.classList.add("selected"); card.querySelector(".answer-value").value = option.dataset.answer; }
   const submit = event.target.closest(".submit-answer"); if (submit) submitExercise(submit.closest(".exercise-card"));
   const chip = event.target.closest(".prompt-chip"); if (chip) { document.querySelector("#chatInput").value = chip.textContent; document.querySelector("#chatInput").focus(); }
-  const retry = event.target.closest(".retry"); if (retry) { go("practice"); document.querySelector(`[data-id="${retry.dataset.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  const retry = event.target.closest(".retry"); if (retry) { setPracticeMode("all"); go("practice"); document.querySelector(`[data-id="${retry.dataset.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  const practiceTab = event.target.closest("[data-practice-mode]"); if (practiceTab) setPracticeMode(practiceTab.dataset.practiceMode);
 });
 document.querySelector("#menuButton").addEventListener("click", () => document.querySelector(".sidebar").classList.toggle("open"));
 document.querySelector("#profileButton").addEventListener("click", openProfile);
@@ -172,6 +202,7 @@ document.querySelector("#profileForm").addEventListener("submit", (event) => {
   const form = new FormData(event.currentTarget);
   state.profile = { ...normalizeProfile(Object.fromEntries(form)), updatedAt: new Date().toISOString() };
   saveState();
+  setPracticeMode("daily");
   closeProfile();
   toast(`欢迎你，${state.profile.nickname}！学习路线已更新`);
 });

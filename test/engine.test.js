@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { diagnoseJava, judgeExercise, retrieveLessons } from "../src/engine.js";
+import { exercises, lessons, publicExercise } from "../src/catalog.js";
 
 test("诊断缺失分号和字符串比较提示", () => {
   const result = diagnoseJava('String role = "student";\nif (role == "student") {\nSystem.out.println("ok")\n}');
@@ -31,6 +32,30 @@ test("数组求和同时接受下标循环和增强 for 循环", () => {
   const enhanced = "for (int num : nums) { sum += num; }";
   assert.equal(judgeExercise("q4", indexed).body.passed, true);
   assert.equal(judgeExercise("q4", enhanced).body.passed, true);
+});
+
+test("课程和题库覆盖 16 个 Java 知识领域", () => {
+  assert.equal(lessons.length, 16);
+  assert.equal(exercises.length, 32);
+  const lessonIds = new Set(lessons.map((item) => item.id));
+  assert.equal(lessonIds.size, 16);
+  for (const lesson of lessons) {
+    assert.equal(exercises.filter((item) => item.knowledge === lesson.id).length, 2);
+  }
+  assert.ok(exercises.every((item) => lessonIds.has(item.knowledge)));
+});
+
+test("公开题目不会泄露答案和判题规则", () => {
+  const choice = publicExercise(exercises.find((item) => item.id === "q1"));
+  const code = publicExercise(exercises.find((item) => item.id === "q3"));
+  assert.equal("answer" in choice, false);
+  assert.equal("explanation" in choice, false);
+  assert.equal("checks" in code, false);
+});
+
+test("加法方法代码题可以正确判题", () => {
+  const code = "static int add(int a, int b) { return a + b; }";
+  assert.equal(judgeExercise("q14", code).body.passed, true);
 });
 
 test("课程检索返回相关知识", () => {

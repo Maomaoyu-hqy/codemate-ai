@@ -97,7 +97,7 @@ export function retrieveLessons(query = "", limit = 3) {
 export function demoTutorReply(message, context = []) {
   const found = context.length ? context : retrieveLessons(message, 2);
   if (!found.length) {
-    return "我目前处于演示模式。可以问我 Java 变量、条件判断、循环、数组、方法或类与对象，例如：‘为什么数组下标从 0 开始？’";
+    return "我目前处于演示模式。可以问我 Java 变量、循环、数组、面向对象、异常、集合、泛型、文件 IO 或 Lambda，例如：‘为什么数组下标从 0 开始？’";
   }
   const primary = found[0];
   return `先给你一个提示：${primary.summary}\n\n可以从这个例子观察：\n${primary.example}\n\n试着用自己的话解释一次，再写一个稍有变化的小例子。如果仍不明白，可以继续告诉我具体卡在哪一行。`;
