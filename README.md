@@ -99,7 +99,7 @@ node server.js
 ## 测试
 
 ```bash
-node --test
+node --test "test/*.test.js"
 ```
 
 测试覆盖代码诊断、题目判定、安全免责声明和课程检索。也可运行 `npm test`。

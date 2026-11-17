@@ -1,3 +1,5 @@
+import { escapeHtml, renderMarkdown } from "./markdown.js";
+
 const initialState = { attempts: [], mistakes: {}, diagnoses: 0, streak: 1, lastVisit: null };
 const state = loadState();
 let exercises = [];
@@ -8,7 +10,6 @@ function loadState() {
   catch { return { ...initialState }; }
 }
 function saveState() { localStorage.setItem("codemate-state", JSON.stringify(state)); renderProfile(); }
-function escapeHtml(value = "") { return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char])); }
 function toast(message) { const el = document.querySelector("#toast"); el.textContent = message; el.classList.add("show"); setTimeout(() => el.classList.remove("show"), 2200); }
 async function request(url, options) {
   const response = await fetch(url, options);
@@ -147,16 +148,20 @@ document.querySelector("#chatForm").addEventListener("submit", async (event) => 
   event.preventDefault(); const input = document.querySelector("#chatInput"); const message = input.value.trim(); if (!message) return;
   const root = document.querySelector("#chatMessages");
   root.insertAdjacentHTML("beforeend", `<div class="message user"><span>你</span><div><p>${escapeHtml(message)}</p></div></div>`); input.value = ""; root.scrollTop = root.scrollHeight;
-  const loading = document.createElement("div"); loading.className = "message assistant"; loading.innerHTML = `<span>✦</span><div><b>CodeMate</b><p>正在思考…</p></div>`; root.append(loading);
+  const loading = document.createElement("div"); loading.className = "message assistant"; loading.innerHTML = `<span>✦</span><div class="message-content"><b>CodeMate</b><div class="markdown-body"><p>正在思考…</p></div></div>`; root.append(loading);
   try {
     const data = await request("/api/tutor", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, learnerContext: learnerContext() })
     });
-    loading.querySelector("p").textContent = data.answer;
-    if (data.sources?.length) loading.querySelector("div").insertAdjacentHTML("beforeend", `<small>参考课程：${data.sources.map((item) => escapeHtml(item.title)).join("、")} · ${data.mode === "demo" ? "演示模式" : "AI 生成"}</small>`);
-  } catch (error) { loading.querySelector("p").textContent = error.data?.fallback || `暂时无法回答：${error.message}`; }
+    loading.querySelector(".markdown-body").innerHTML = renderMarkdown(data.answer);
+    if (data.sources?.length) loading.querySelector(".message-content").insertAdjacentHTML("beforeend", `<small>参考课程：${data.sources.map((item) => escapeHtml(item.title)).join("、")} · ${data.mode === "demo" ? "演示模式" : "AI 生成"}</small>`);
+  } catch (error) {
+    const fallback = error.data?.fallback || `暂时无法回答：${error.message}`;
+    loading.querySelector(".markdown-body").innerHTML = renderMarkdown(fallback);
+    if (error.data?.mode === "fallback") loading.querySelector(".message-content").insertAdjacentHTML("beforeend", `<small class="fallback-note">真实模型暂时不可用，已切换到演示回答。</small>`);
+  }
   root.scrollTop = root.scrollHeight;
 });
 document.querySelector("#searchForm").addEventListener("submit", async (event) => {

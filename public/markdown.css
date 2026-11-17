@@ -1,0 +1,15 @@
+.message-content{min-width:0;width:100%}
+.markdown-body{margin-top:5px;min-width:0}
+.markdown-body p{margin:8px 0;white-space:normal}
+.markdown-body h3,.markdown-body h4,.markdown-body h5,.markdown-body h6{margin:16px 0 7px;line-height:1.4}
+.markdown-body h3{font-size:18px}.markdown-body h4{font-size:16px}.markdown-body h5,.markdown-body h6{font-size:14px}
+.markdown-body ul,.markdown-body ol{margin:8px 0;padding-left:24px}.markdown-body li{margin:5px 0}
+.markdown-body code{font-family:Consolas,"SFMono-Regular",monospace;background:#eef2ef;border-radius:5px;padding:2px 5px;font-size:.9em}
+.md-code{position:relative;margin:12px 0}.md-code pre{margin:0;padding:17px 15px 14px;border-radius:10px;background:#142a24;color:#e4eee9;overflow:auto;white-space:pre;line-height:1.65}
+.md-code pre code{padding:0;background:transparent;color:inherit;font-size:12px}
+.code-language{position:absolute;right:9px;top:5px;color:#9db3ab;font-size:9px;text-transform:uppercase}
+.md-table-wrap{overflow-x:auto;margin:12px 0;border:1px solid #e5e9e2;border-radius:9px}
+.markdown-body table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}.markdown-body th,.markdown-body td{padding:8px 10px;border-bottom:1px solid #e5e9e2;text-align:left}.markdown-body th{background:#f0f4ec}.markdown-body tr:last-child td{border-bottom:0}
+.markdown-body blockquote{margin:10px 0;padding:8px 12px;border-left:3px solid #0d7c66;background:#f0f4ec;color:#52615b}
+.markdown-body hr{border:0;border-top:1px solid #e5e9e2;margin:15px 0}
+.message-content>small{display:block;margin-top:9px;color:#6c7772}.fallback-note{color:#a26126!important}
