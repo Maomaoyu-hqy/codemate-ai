@@ -36,11 +36,11 @@ test("数组求和同时接受下标循环和增强 for 循环", () => {
 
 test("课程和题库覆盖 16 个 Java 知识领域", () => {
   assert.equal(lessons.length, 16);
-  assert.equal(exercises.length, 32);
+  assert.equal(exercises.length, 100);
   const lessonIds = new Set(lessons.map((item) => item.id));
   assert.equal(lessonIds.size, 16);
   for (const lesson of lessons) {
-    assert.equal(exercises.filter((item) => item.knowledge === lesson.id).length, 2);
+    assert.ok(exercises.filter((item) => item.knowledge === lesson.id).length >= 6);
     assert.equal(lesson.resource.platform, "中国大学MOOC");
     assert.match(lesson.resource.url, /^https:\/\/www\.icourse163\.org\/course\//);
     assert.ok(lesson.resource.topic);
