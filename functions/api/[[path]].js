@@ -1,5 +1,6 @@
 import { exercises, lessons, publicExercise } from "../../src/catalog.js";
 import { demoTutorReply, diagnoseJava, judgeExercise, retrieveLessons } from "../../src/engine.js";
+import { generateTutorReply } from "../../src/tutor.js";
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -14,45 +15,6 @@ async function readBody(request) {
   const raw = await request.text();
   if (raw.length > 200_000) throw new Error("请求内容过大");
   return raw ? JSON.parse(raw) : {};
-}
-
-async function tutor(message, env) {
-  const context = retrieveLessons(message, 3);
-  const apiKey = env.AI_API_KEY || "";
-  if (!apiKey) {
-    return {
-      mode: "demo",
-      answer: demoTutorReply(message, context),
-      sources: context.map(({ id, title }) => ({ id, title }))
-    };
-  }
-
-  const apiBase = (env.AI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
-  const model = env.AI_MODEL || "gpt-4o-mini";
-  const courseContext = context
-    .map((item) => `【${item.title}】${item.summary}\n示例：${item.example}`)
-    .join("\n\n") || "未检索到直接相关的课程片段。";
-
-  const response = await fetch(`${apiBase}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      temperature: 0.3,
-      messages: [
-        { role: "system", content: "你是 CodeMate AI，一位耐心的 Java 入门导师。用简洁中文回答；优先启发式提示，不直接替学生完成整题；不要声称执行过代码。" },
-        { role: "system", content: `课程知识检索结果：\n${courseContext}` },
-        { role: "user", content: String(message).slice(0, 5000) }
-      ]
-    })
-  });
-  if (!response.ok) throw new Error(`模型服务返回 ${response.status}`);
-  const data = await response.json();
-  return {
-    mode: "api",
-    answer: data.choices?.[0]?.message?.content || "模型未返回有效内容。",
-    sources: context.map(({ id, title }) => ({ id, title }))
-  };
 }
 
 export async function onRequest({ request, env }) {
@@ -79,10 +41,17 @@ export async function onRequest({ request, env }) {
       return json(result.body, result.status);
     }
     if (method === "POST" && path === "/api/tutor") {
-      const { message = "" } = await readBody(request);
+      const { message = "", learnerContext = {} } = await readBody(request);
       if (!String(message).trim()) return json({ error: "请输入问题" }, 400);
       try {
-        return json(await tutor(message, env));
+        return json(await generateTutorReply({
+          message,
+          learnerContext,
+          apiKey: env.AI_API_KEY || "",
+          apiBase: env.AI_BASE_URL || "https://api.openai.com/v1",
+          model: env.AI_MODEL || "gpt-4o-mini",
+          maxTokens: env.AI_MAX_TOKENS || 700
+        }));
       } catch (error) {
         return json({
           error: "模型服务暂时不可用",

@@ -34,6 +34,20 @@ function knowledgeStats() {
   }));
 }
 
+function learnerContext() {
+  const labels = { variables: "变量", condition: "条件判断", loop: "循环", array: "数组", method: "方法", oop: "面向对象" };
+  const weakPoints = Object.entries(knowledgeStats())
+    .filter(([, score]) => score > 0)
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, 3)
+    .map(([id]) => labels[id] || id);
+  return {
+    stage: state.profile?.stage || "未设置（按 Java 入门学习者讲解）",
+    goal: state.profile?.goal || "完成每日练习并理解错题",
+    weakPoints
+  };
+}
+
 function renderProfile() {
   const attempts = state.attempts;
   const passed = attempts.filter((item) => item.passed).length;
@@ -135,7 +149,11 @@ document.querySelector("#chatForm").addEventListener("submit", async (event) => 
   root.insertAdjacentHTML("beforeend", `<div class="message user"><span>你</span><div><p>${escapeHtml(message)}</p></div></div>`); input.value = ""; root.scrollTop = root.scrollHeight;
   const loading = document.createElement("div"); loading.className = "message assistant"; loading.innerHTML = `<span>✦</span><div><b>CodeMate</b><p>正在思考…</p></div>`; root.append(loading);
   try {
-    const data = await request("/api/tutor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message }) });
+    const data = await request("/api/tutor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, learnerContext: learnerContext() })
+    });
     loading.querySelector("p").textContent = data.answer;
     if (data.sources?.length) loading.querySelector("div").insertAdjacentHTML("beforeend", `<small>参考课程：${data.sources.map((item) => escapeHtml(item.title)).join("、")} · ${data.mode === "demo" ? "演示模式" : "AI 生成"}</small>`);
   } catch (error) { loading.querySelector("p").textContent = error.data?.fallback || `暂时无法回答：${error.message}`; }

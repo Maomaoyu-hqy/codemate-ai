@@ -4,6 +4,7 @@ import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { exercises, lessons, publicExercise } from "./src/catalog.js";
 import { demoTutorReply, diagnoseJava, judgeExercise, retrieveLessons } from "./src/engine.js";
+import { generateTutorReply } from "./src/tutor.js";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 const publicRoot = join(root, "public");
@@ -12,6 +13,7 @@ const host = process.env.HOST || "127.0.0.1";
 const apiKey = process.env.AI_API_KEY || "";
 const apiBase = (process.env.AI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
 const model = process.env.AI_MODEL || "gpt-4o-mini";
+const maxTokens = process.env.AI_MAX_TOKENS || 700;
 
 const json = (res, status, body) => {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
@@ -26,28 +28,6 @@ const readBody = async (req) => {
   }
   return raw ? JSON.parse(raw) : {};
 };
-
-async function tutor(message) {
-  const context = retrieveLessons(message, 3);
-  if (!apiKey) return { mode: "demo", answer: demoTutorReply(message, context), sources: context.map(({ id, title }) => ({ id, title })) };
-  const courseContext = context.map((item) => `【${item.title}】${item.summary}\n示例：${item.example}`).join("\n\n") || "未检索到直接相关的课程片段。";
-  const response = await fetch(`${apiBase}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      temperature: 0.3,
-      messages: [
-        { role: "system", content: "你是 CodeMate AI，一位耐心的 Java 入门导师。用简洁中文回答；优先启发式提示，不直接替学生完成整题；指出不确定性；不要声称执行过代码。" },
-        { role: "system", content: `课程知识检索结果：\n${courseContext}` },
-        { role: "user", content: String(message).slice(0, 5000) }
-      ]
-    })
-  });
-  if (!response.ok) throw new Error(`模型服务返回 ${response.status}`);
-  const data = await response.json();
-  return { mode: "api", answer: data.choices?.[0]?.message?.content || "模型未返回有效内容。", sources: context.map(({ id, title }) => ({ id, title })) };
-}
 
 async function api(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/status") return json(res, 200, { ok: true, aiMode: apiKey ? "api" : "demo", model: apiKey ? model : null });
@@ -64,9 +44,9 @@ async function api(req, res, url) {
     return json(res, result.status, result.body);
   }
   if (req.method === "POST" && url.pathname === "/api/tutor") {
-    const { message = "" } = await readBody(req);
+    const { message = "", learnerContext = {} } = await readBody(req);
     if (!String(message).trim()) return json(res, 400, { error: "请输入问题" });
-    try { return json(res, 200, await tutor(message)); }
+    try { return json(res, 200, await generateTutorReply({ message, learnerContext, apiKey, apiBase, model, maxTokens })); }
     catch (error) { return json(res, 502, { error: "模型服务暂时不可用", detail: error.message, fallback: demoTutorReply(message, retrieveLessons(message, 2)), mode: "fallback" }); }
   }
   return json(res, 404, { error: "接口不存在" });

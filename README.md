@@ -55,7 +55,7 @@ node server.js
 npm start
 ```
 
-### 配置真实模型（可选）
+### 配置真实模型（可选，推荐比赛演示时启用）
 
 复制 `.env.example` 为 `.env`，然后根据所用平台填写。项目本身不会自动读取 `.env` 文件，以保持零依赖；启动前请通过系统或部署平台注入环境变量。
 
@@ -65,6 +65,17 @@ PowerShell 示例：
 $env:AI_API_KEY="你的密钥"
 $env:AI_BASE_URL="https://api.openai.com/v1"
 $env:AI_MODEL="gpt-4o-mini"
+$env:AI_MAX_TOKENS="700"
+node server.js
+```
+
+使用 DeepSeek 时可改为：
+
+```powershell
+$env:AI_API_KEY="你的 DeepSeek 密钥"
+$env:AI_BASE_URL="https://api.deepseek.com"
+$env:AI_MODEL="deepseek-flash"
+$env:AI_MAX_TOKENS="700"
 node server.js
 ```
 
@@ -75,10 +86,15 @@ node server.js
 | `AI_API_KEY` | 否 | 空 | 留空时使用演示模式 |
 | `AI_BASE_URL` | 否 | `https://api.openai.com/v1` | OpenAI 兼容 API 根地址 |
 | `AI_MODEL` | 否 | `gpt-4o-mini` | 模型名称 |
+| `AI_MAX_TOKENS` | 否 | `700` | 单次回答最大输出量；程序强制限制在 200–1200 之间 |
 | `HOST` | 否 | `127.0.0.1` | 监听地址；部署时可设为 `0.0.0.0` |
 | `PORT` | 否 | `3000` | 服务端口 |
 
 不要提交 `.env`、真实密钥、个人信息或聊天日志；`.env` 已加入 `.gitignore`。
+
+### Cloudflare Workers 配置
+
+仓库中的 `wrangler.jsonc` 已设置 DeepSeek 接口地址、模型名和单次输出上限。线上部署时只需在 Cloudflare 项目的 **Settings → Variables and Secrets** 中添加加密变量 `AI_API_KEY`，值为 DeepSeek 平台创建的密钥，然后重新部署。不要把密钥写入 `wrangler.jsonc` 或上传到 GitHub。
 
 ## 测试
 
@@ -117,6 +133,8 @@ node --test
 - 请求体上限为 200 KB，导师消息和诊断代码会进一步限制长度。
 - 前端显示用户内容时执行 HTML 转义。
 - API 密钥只从服务端环境变量读取，不下发到浏览器。
+- 导师会携带学习阶段、学习目标和最多 3 个薄弱知识点，但不会上传昵称等不必要的个人信息。
+- 导师消息最多读取 3000 个字符，单次回答默认最多 700 tokens，用于控制费用与异常超长输出。
 - 真实模型不可用时显示错误并提供演示模式回答，不伪装为真实 AI 成功。
 
 ## 已知限制与后续扩展
