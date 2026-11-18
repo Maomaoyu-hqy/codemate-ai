@@ -51,7 +51,7 @@ export async function onRequest({ request, env }) {
           apiKey: env.AI_API_KEY || "",
           apiBase: env.AI_BASE_URL || "https://api.openai.com/v1",
           model: env.AI_MODEL || "gpt-4o-mini",
-          maxTokens: env.AI_MAX_TOKENS || 700
+          maxTokens: env.AI_MAX_TOKENS || 1600
         }));
       } catch (error) {
         return json({
@@ -70,7 +70,7 @@ export async function onRequest({ request, env }) {
           apiKey: env.AI_API_KEY || "",
           apiBase: env.AI_BASE_URL || "https://api.openai.com/v1",
           model: env.AI_MODEL || "gpt-4o-mini",
-          maxTokens: env.AI_MAX_TOKENS || 700
+          maxTokens: env.AI_MAX_TOKENS || 1600
         }));
       } catch (error) {
         return json({ error: "学习总结暂时无法生成", detail: error.message, fallback: demoLearningReport(reportContext), mode: "fallback" }, 502);

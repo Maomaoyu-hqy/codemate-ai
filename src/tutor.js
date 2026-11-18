@@ -20,7 +20,7 @@ export async function generateTutorReply({
   apiKey = "",
   apiBase = "https://api.openai.com/v1",
   model = "gpt-4o-mini",
-  maxTokens = 700,
+  maxTokens = 1600,
   fetchImpl = fetch
 }) {
   const safeMessage = String(message || "").trim().slice(0, 3000);
@@ -38,11 +38,11 @@ export async function generateTutorReply({
     body: JSON.stringify({
       model,
       temperature: 0.3,
-      max_tokens: clamp(maxTokens, 200, 1200, 700),
+      max_tokens: clamp(maxTokens, 400, 2400, 1600),
       messages: [
         {
           role: "system",
-          content: "你是 CodeMate AI，一位耐心、严谨的 Java 入门导师。使用简洁中文；先诊断学习者卡点，再提供分层提示；除非用户明确要求，不直接给完整答案；引用课程上下文时不得编造；不要声称执行过代码。"
+          content: "你是 CodeMate AI，一位耐心、严谨的 Java 入门导师。使用简洁中文；先诊断学习者卡点，再提供分层提示；除非用户明确要求，不直接给完整答案；引用课程上下文时不得编造；不要声称执行过代码。回答必须完整收尾，不得留下只有标题而没有正文的章节；优先精炼，通常控制在 1200 个中文字以内；表格最多 6 行，示例代码只保留理解概念所需的最小片段。"
         },
         { role: "system", content: `学习者画像：\n${learnerSummary(learnerContext)}` },
         { role: "system", content: `课程知识检索结果：\n${courseContext}` },
@@ -52,9 +52,18 @@ export async function generateTutorReply({
   });
   if (!response.ok) throw new Error(`模型服务返回 ${response.status}`);
   const data = await response.json();
+  const choice = data.choices?.[0];
+  const finishReason = choice?.finish_reason || "unknown";
   return {
     mode: "api",
-    answer: data.choices?.[0]?.message?.content || "模型未返回有效内容。",
+    answer: choice?.message?.content || "模型未返回有效内容。",
+    finishReason,
+    truncated: finishReason === "length",
+    usage: data.usage ? {
+      promptTokens: data.usage.prompt_tokens,
+      completionTokens: data.usage.completion_tokens,
+      totalTokens: data.usage.total_tokens
+    } : undefined,
     sources
   };
 }

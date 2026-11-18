@@ -358,6 +358,7 @@ document.querySelector("#chatForm").addEventListener("submit", async (event) => 
     loading.classList.remove("is-thinking"); loading.classList.add("is-printing");
     await typewriterMarkdown(loading.querySelector(".markdown-body"), data.answer, root);
     loading.classList.remove("is-printing");
+    if (data.truncated) loading.querySelector(".message-content").insertAdjacentHTML("beforeend", `<small class="fallback-note">本次回答达到模型输出长度上限。请把问题拆成一个更小的子问题后继续提问。</small>`);
     if (data.sources?.length) loading.querySelector(".message-content").insertAdjacentHTML("beforeend", `<small>参考课程：${data.sources.map((item) => escapeHtml(item.title)).join("、")} · ${data.mode === "demo" ? "演示模式" : "AI 生成"}</small>`);
   } catch (error) {
     const fallback = error.data?.fallback || `暂时无法回答：${error.message}`;

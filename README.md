@@ -81,7 +81,7 @@ PowerShell 示例：
 $env:AI_API_KEY="你的密钥"
 $env:AI_BASE_URL="https://api.openai.com/v1"
 $env:AI_MODEL="gpt-4o-mini"
-$env:AI_MAX_TOKENS="700"
+$env:AI_MAX_TOKENS="1600"
 node server.js
 ```
 
@@ -91,7 +91,7 @@ node server.js
 $env:AI_API_KEY="你的 DeepSeek 密钥"
 $env:AI_BASE_URL="https://api.deepseek.com"
 $env:AI_MODEL="deepseek-flash"
-$env:AI_MAX_TOKENS="700"
+$env:AI_MAX_TOKENS="1600"
 node server.js
 ```
 
@@ -102,7 +102,7 @@ node server.js
 | `AI_API_KEY` | 否 | 空 | 留空时使用演示模式 |
 | `AI_BASE_URL` | 否 | `https://api.openai.com/v1` | OpenAI 兼容 API 根地址 |
 | `AI_MODEL` | 否 | `gpt-4o-mini` | 模型名称 |
-| `AI_MAX_TOKENS` | 否 | `700` | 单次回答最大输出量；程序强制限制在 200–1200 之间 |
+| `AI_MAX_TOKENS` | 否 | `1600` | 单次回答最大输出量；程序强制限制在 400–2400 之间 |
 | `HOST` | 否 | `127.0.0.1` | 监听地址；部署时可设为 `0.0.0.0` |
 | `PORT` | 否 | `3000` | 服务端口 |
 
@@ -119,7 +119,7 @@ node server.js
 1. 在腾讯云 CloudBase 控制台创建环境并进入“云托管”。
 2. 创建服务，选择“代码部署”或关联当前 GitHub 仓库。
 3. 构建方式选择仓库中的 `Dockerfile`，服务端口填写 `8080`。
-4. 在环境变量中添加 `AI_API_KEY`、`AI_BASE_URL=https://api.deepseek.com`、`AI_MODEL=deepseek-flash`、`AI_MAX_TOKENS=700`。
+4. 在环境变量中添加 `AI_API_KEY`、`AI_BASE_URL=https://api.deepseek.com`、`AI_MODEL=deepseek-flash`、`AI_MAX_TOKENS=1600`。
 5. 部署成功后，打开服务分配的默认公网域名，并用国内普通网络测试首页与 AI 导师。
 
 默认域名适合作为比赛测试和备用入口；长期正式运营建议绑定已备案的自定义域名。API 密钥只能填写在云平台环境变量中，不得写入代码或 GitHub。

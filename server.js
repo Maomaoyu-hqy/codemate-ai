@@ -14,7 +14,7 @@ const host = process.env.HOST || "127.0.0.1";
 const apiKey = process.env.AI_API_KEY || "";
 const apiBase = (process.env.AI_BASE_URL || "https://api.openai.com/v1").replace(/\/$/, "");
 const model = process.env.AI_MODEL || "gpt-4o-mini";
-const maxTokens = process.env.AI_MAX_TOKENS || 700;
+const maxTokens = process.env.AI_MAX_TOKENS || 1600;
 
 const json = (res, status, body) => {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
